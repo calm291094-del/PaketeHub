@@ -1,6 +1,7 @@
 <div align="center">
 
 # 📦 PaketeHub
+![Mi Pakete Banner](banner.png)
 
 ### Centro Multimedia Local con estética Cyberpunk
 
