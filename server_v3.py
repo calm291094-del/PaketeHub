@@ -27,7 +27,6 @@ DB_FILE = os.path.join(BASE_DIR, "pakete.db")
 ADMIN_USER = "root"
 ADMIN_PASS = "admin123"
 
-# Crear carpetas automaticamente
 for carpeta in [CARPETA_BASE, CARPETA_COVERS, CARPETA_STATIC]:
     if not os.path.exists(carpeta):
         os.makedirs(carpeta)
@@ -198,46 +197,48 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 #mc{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.12}
 .go{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:50px 50px;animation:gm 20s linear infinite}
 @keyframes gm{0%{transform:translate(0,0)}100%{transform:translate(50px,50px)}}
-.ct{max-width:1200px;margin:0 auto;padding:20px;position:relative;z-index:1}
-.hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:24px 32px;background:var(--g);backdrop-filter:blur(20px);border-radius:16px;border:1px solid rgba(0,255,136,0.2);box-shadow:0 0 30px rgba(0,255,136,0.1);margin-bottom:32px;position:relative;overflow:hidden}
+.ct{max-width:1200px;margin:0 auto;padding:24px 20px;position:relative;z-index:1}
+.hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:24px 32px;background:var(--g);backdrop-filter:blur(20px);border-radius:16px;border:1px solid rgba(0,255,136,0.2);box-shadow:0 0 30px rgba(0,255,136,0.1);margin-bottom:40px;position:relative;overflow:hidden}
 .hd::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--p),transparent);animation:sc 3s linear infinite}
 @keyframes sc{0%{left:-100%}100%{left:100%}}
 .lg h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--s),var(--a));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Courier New',monospace}
-.lg span{font-size:14px;color:var(--p);margin-top:4px;opacity:0.7;font-family:'Courier New',monospace}
+.lg span{font-size:14px;color:var(--p);margin-top:4px;opacity:0.7;font-family:'Courier New',monospace;display:block}
 .ha{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .bt{padding:10px 20px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.3s;font-family:'Courier New',monospace}
 .bp{background:linear-gradient(135deg,var(--p),var(--s));color:var(--dk);box-shadow:0 4px 20px rgba(0,255,136,0.3)}
 .bp:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(0,255,136,0.5)}
 .bg2{background:rgba(0,255,136,0.1);color:var(--p);border:1px solid rgba(0,255,136,0.3)}
 .bg2:hover{background:rgba(0,255,136,0.2);border-color:var(--p)}
-.st{margin-bottom:32px}
-.stt{display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:24px;font-weight:700;color:var(--l);font-family:'Courier New',monospace}
+.st{margin-bottom:48px}
+.st:last-of-type{margin-bottom:32px}
+.stt{display:flex;align-items:center;gap:12px;margin-bottom:24px;font-size:24px;font-weight:700;color:var(--l);font-family:'Courier New',monospace}
 .stt::before{content:'>';color:var(--p);animation:bl 1s infinite}
 @keyframes bl{0%,50%{opacity:1}51%,100%{opacity:0}}
 .bdg{background:linear-gradient(135deg,var(--a),var(--s));font-size:10px;padding:4px 14px;border-radius:4px;color:var(--dk);letter-spacing:1px;font-weight:700}
 .cw{position:relative;overflow:hidden;border-radius:16px;background:var(--g);backdrop-filter:blur(15px);border:1px solid rgba(0,255,136,0.2);box-shadow:0 0 40px rgba(0,255,136,0.1)}
 .ctrk{display:flex;transition:transform 0.8s cubic-bezier(0.4,0,0.2,1)}
 .csl{min-width:100%;display:flex;align-items:center;gap:32px;padding:40px}
-.csl img{width:160px;height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--p);box-shadow:0 0 30px rgba(0,255,136,0.3);transition:all 0.4s}
+.csl img{width:160px;height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--p);box-shadow:0 0 30px rgba(0,255,136,0.3);transition:all 0.4s;flex-shrink:0}
 .csl img:hover{transform:scale(1.05) rotate(2deg)}
-.ci{flex:1}
-.ci h3{font-size:28px;font-weight:700;color:var(--l);margin-bottom:12px;font-family:'Courier New',monospace}
-.ci p{color:rgba(224,230,237,0.7);font-size:16px;line-height:1.6;margin-bottom:16px}
+.ci{flex:1;min-width:0}
+.ci h3{font-size:26px;font-weight:700;color:var(--l);margin-bottom:12px;font-family:'Courier New',monospace}
+.ci p{color:rgba(224,230,237,0.7);font-size:15px;line-height:1.6;margin-bottom:16px}
 .tgs{display:flex;gap:8px;flex-wrap:wrap}
 .tg{background:rgba(0,255,136,0.15);color:var(--p);padding:6px 16px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid rgba(0,255,136,0.3);font-family:'Courier New',monospace}
-.cds{display:flex;justify-content:center;gap:8px;padding:20px 0 8px 0}
+.cds{display:flex;justify-content:center;gap:8px;padding:16px 0 4px 0}
 .cds button{width:10px;height:10px;border-radius:50%;border:none;background:rgba(0,255,136,0.3);cursor:pointer;transition:all 0.3s}
 .cds button.act{background:var(--p);box-shadow:0 0 20px var(--p);width:32px;border-radius:10px}
 .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
-.sc{background:var(--g);backdrop-filter:blur(15px);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:24px;text-align:center;transition:all 0.3s;position:relative;overflow:hidden}
+.sc{background:var(--g);backdrop-filter:blur(15px);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:24px 20px;text-align:center;transition:all 0.3s;position:relative;overflow:hidden}
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--p),var(--s),var(--a));transform:scaleX(0);transition:transform 0.3s}
 .sc:hover::before{transform:scaleX(1)}
 .sc:hover{transform:translateY(-4px);border-color:var(--p);box-shadow:0 0 30px rgba(0,255,136,0.2)}
-.si{font-size:32px;margin-bottom:8px}
-.sv{font-size:28px;font-weight:800;color:var(--p);font-family:'Courier New',monospace;text-shadow:0 0 20px rgba(0,255,136,0.5)}
-.sl2{font-size:12px;color:rgba(224,230,237,0.6);margin-top:4px;font-family:'Courier New',monospace}
+.si{font-size:30px;margin-bottom:8px}
+.sv{font-size:26px;font-weight:800;color:var(--p);font-family:'Courier New',monospace;text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.sl2{font-size:12px;color:rgba(224,230,237,0.6);margin-top:6px;font-family:'Courier New',monospace}
 .ex{background:var(--g);backdrop-filter:blur(15px);border-radius:16px;border:1px solid rgba(0,255,136,0.2);padding:28px;box-shadow:0 0 40px rgba(0,255,136,0.1)}
 .eh{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+.eh h2{font-family:'Courier New',monospace;color:var(--p);font-size:20px;margin:0}
 .sb{background:rgba(0,0,0,0.5);border:1px solid rgba(0,255,136,0.3);border-radius:8px;padding:10px 20px;display:flex;align-items:center;transition:all 0.3s}
 .sb:focus-within{border-color:var(--p);box-shadow:0 0 30px rgba(0,255,136,0.3)}
 .sb input{background:transparent;border:none;color:var(--l);padding:6px 12px;width:220px;outline:none;font-size:14px;font-family:'Courier New',monospace}
@@ -262,13 +263,32 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 .fg input,.fg select,.fg textarea{width:100%;padding:10px 14px;background:rgba(0,0,0,0.5);border:1px solid rgba(0,255,136,0.3);border-radius:8px;color:var(--l);font-family:'Courier New',monospace;font-size:14px}
 .fg textarea{resize:vertical;min-height:80px}
 .ma{display:flex;gap:12px;margin-top:20px}
-.ft{margin-top:40px;text-align:center;font-size:13px;color:rgba(224,230,237,0.4);padding-top:20px;border-top:1px solid rgba(0,255,136,0.1);font-family:'Courier New',monospace}
-.ft .cr{margin-top:8px;font-size:14px;color:var(--p);text-shadow:0 0 10px rgba(0,255,136,0.3)}
+.ft{margin-top:48px;text-align:center;font-size:13px;color:rgba(224,230,237,0.4);padding-top:24px;border-top:1px solid rgba(0,255,136,0.1);font-family:'Courier New',monospace}
+.ft .cr{font-size:14px;color:var(--p);text-shadow:0 0 10px rgba(0,255,136,0.3)}
 .tt{font-family:'Courier New',monospace;color:var(--p);text-shadow:0 0 10px rgba(0,255,136,0.5)}
 .ld{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,255,136,0.1);border-radius:50%;border-top-color:var(--p);animation:sp 1s ease-in-out infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--dk)}::-webkit-scrollbar-thumb{background:var(--p);border-radius:10px}
-@media(max-width:768px){.hd{flex-direction:column;align-items:stretch;gap:16px;padding:20px}.csl{flex-direction:column;text-align:center;padding:24px}.csl img{width:140px;height:190px}.sb input{width:150px}.ex{padding:20px}.sg{grid-template-columns:repeat(2,1fr)}.ha{justify-content:center}}
+@media(max-width:768px){
+.hd{flex-direction:column;align-items:stretch;gap:16px;padding:20px;margin-bottom:28px}
+.st{margin-bottom:32px}
+.csl{flex-direction:column;text-align:center;padding:24px;gap:20px}
+.csl img{width:130px;height:180px}
+.ci h3{font-size:22px}
+.sb input{width:150px}
+.ex{padding:20px}
+.sg{grid-template-columns:repeat(2,1fr);gap:12px}
+.ha{justify-content:center}
+.eh{flex-direction:column;align-items:stretch}
+.sb{width:100%}
+.sb input{width:100%}
+}
+@media(max-width:400px){
+.sg{grid-template-columns:1fr 1fr}
+.sc{padding:16px 12px}
+.sv{font-size:22px}
+.si{font-size:24px}
+}
 </style>
 </head>
 <body>
@@ -278,25 +298,33 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 <header class="hd">
 <div class="lg"><h1>./mi_pakete</h1><span>root@multimedia:~$ ./start_server.sh</span></div>
 <div class="ha">
-<button class="bt bg2" id="btnPet">solicitar_contenido</button>
-<button class="bt bp" id="btnAdm">sudo admin</button>
+<button class="bt bg2" id="btnPet">📝 solicitar_contenido</button>
+<button class="bt bp" id="btnAdm">🔐 sudo admin</button>
 </div>
 </header>
 <section class="st">
-<div class="stt">ESTRENOS_EXCLUSIVOS <span class="bdg">NUEVO</span></div>
-<div class="cw"><div class="ctrk" id="ctrk"><div class="csl" style="justify-content:center;min-height:200px"><div class="ld"></div></div></div></div>
+<div class="stt">🎬 ESTRENOS_EXCLUSIVOS <span class="bdg">NUEVO</span></div>
+<div class="cw">
+<div class="ctrk" id="ctrk">
+<div class="csl" style="justify-content:center;min-height:200px"><div class="ld"></div></div>
+</div>
+</div>
 <div class="cds" id="cds"></div>
 </section>
+<section class="st">
+<div class="stt">💰 PLANES_Y_PRECIOS</div>
 <div class="sg">
-<div class="sc"><div class="si">💰</div><div class="sv">10</div><div class="sl2">CUP/GB descargado</div></div>
-<div class="sc"><div class="si">🌙</div><div class="sv">50</div><div class="sl2">CUP dia ilimitado</div></div>
-<div class="sc"><div class="si">📅</div><div class="sv">150</div><div class="sl2">CUP semanal</div></div>
+<div class="sc"><div class="si">💰</div><div class="sv">6.25 CUP</div><div class="sl2">por GB descargado</div></div>
+<div class="sc"><div class="si">🌙</div><div class="sv">50 CUP</div><div class="sl2">dia ilimitado</div></div>
+<div class="sc"><div class="si">📅</div><div class="sv">200 CUP</div><div class="sl2">semanal (mejor oferta)</div></div>
 <div class="sc"><div class="si">📂</div><div class="sv" id="tArch">0</div><div class="sl2">archivos disponibles</div></div>
 </div>
+</section>
 <section class="st">
+<div class="stt">📂 BIBLIOTECA_COMPLETA</div>
 <div class="ex">
 <div class="eh">
-<h2 style="font-family:'Courier New',monospace;color:var(--p)">ls -la biblioteca/</h2>
+<h2>ls -la biblioteca/</h2>
 <div class="sb"><span style="color:var(--p)">🔍</span><input type="text" id="bsc" placeholder="buscar archivo..."></div>
 </div>
 <div id="larch"><div class="vc"><div class="ld"></div><p style="margin-top:16px">cargando archivos...</p></div></div>
@@ -304,14 +332,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 </section>
 <div class="ft">
 <div class="cr">☕ Creado por <strong>Carlos A Lorenzo Marro</strong> con cafe, anime e IA 🌸🤖</div>
-<br>💡 copia archivos en <span class="tt">Pakete/</span> y posters en <span class="tt">covers/</span>
-<br>🔄 actualiza (F5) para ver contenido nuevo
 </div>
 </div>
-
 <div class="md" id="mPet">
 <div class="mdc">
-<h2>solicitar_contenido.sh</h2>
+<h2>📝 solicitar_contenido.sh</h2>
 <p style="color:rgba(224,230,237,0.7);margin-bottom:20px">No encuentras lo que buscas? Dinoslo y lo agregaremos.</p>
 <form id="fPet">
 <div class="fg"><label>tipo_contenido:</label>
@@ -322,10 +347,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 </form>
 </div>
 </div>
-
 <div class="md" id="mLog">
 <div class="mdc">
-<h2>autenticacion_root</h2>
+<h2>🔐 autenticacion_root</h2>
 <form id="fLog">
 <div class="fg"><label>usuario:</label><input type="text" name="usuario" value="root" required></div>
 <div class="fg"><label>contrasena:</label><input type="password" name="password" required></div>
@@ -333,7 +357,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l)
 </form>
 </div>
 </div>
-
 <script>
 (function(){
 var cv=document.getElementById('mc'),cx=cv.getContext('2d');
@@ -351,19 +374,18 @@ if(dr[j]*fs>cv.height&&Math.random()>0.975)dr[j]=0;
 dr[j]++;}
 },50);
 window.addEventListener('resize',function(){cv.width=window.innerWidth;cv.height=window.innerHeight;});
-
 var si=0,sd=[],api=null;
 function cargarCovers(){
 fetch('/api/covers').then(function(r){return r.json()}).then(function(d){
 sd=d;
 var tk=document.getElementById('ctrk'),dt=document.getElementById('cds');
 if(d.length===0){
-tk.innerHTML='<div class="csl" style="justify-content:center;min-height:200px"><div style="text-align:center;color:rgba(224,230,237,0.5)"><div style="font-size:48px;margin-bottom:12px">🎬</div><p>agrega imagenes en <span class="tt">covers/</span></p></div></div>';
+tk.innerHTML='<div class="csl" style="justify-content:center;min-height:200px"><div style="text-align:center;color:rgba(224,230,237,0.5)"><div style="font-size:48px;margin-bottom:12px">🎬</div><p>Proximamente nuevos estrenos...</p></div></div>';
 dt.innerHTML='';return;}
 var h='';
 for(var k=0;k<d.length;k++){
 var nb=d[k].name.replace(/\.[^.]+$/,'');
-h+='<div class="csl"><img src="'+d[k].url+'" alt="'+nb+'" loading="lazy"><div class="ci"><h3>'+nb+'</h3><p>estreno exclusivo disponible en nuestra biblioteca premium. descargalo ahora.</p><div class="tgs"><span class="tg">🔥 disponible</span><span class="tg">⭐ exclusivo</span></div></div></div>';}
+h+='<div class="csl"><img src="'+d[k].url+'" alt="'+nb+'" loading="lazy"><div class="ci"><h3>'+nb+'</h3><p>Estreno exclusivo disponible en nuestra biblioteca. Descargalo ahora con la mejor calidad.</p><div class="tgs"><span class="tg">🔥 disponible</span><span class="tg">⭐ exclusivo</span></div></div></div>';}
 tk.innerHTML=h;
 var dh='';
 for(var m=0;m<d.length;m++){dh+='<button class="'+(m===0?'act':'')+'" data-i="'+m+'"></button>';}
@@ -382,7 +404,6 @@ si=idx;tk.style.transform='translateX(-'+(idx*100)+'%)';
 for(var q=0;q<dts.length;q++){
 if(q===idx)dts[q].className='act';else dts[q].className='';}
 }
-
 var cont=document.getElementById('larch'),bsc=document.getElementById('bsc'),tA=document.getElementById('tArch');
 function renderArbol(items,nv){
 nv=nv||0;var h='';
@@ -445,18 +466,16 @@ p=p.parentElement;}}}
 function cargarArchivos(){
 fetch('/api/list').then(function(r){return r.json()}).then(function(d){
 if(d.length===0){
-cont.innerHTML='<div class="vc"><div style="font-size:48px;margin-bottom:12px">📭</div><p>no hay archivos en <span class="tt">Pakete/</span>. agrega contenido.</p></div>';
+cont.innerHTML='<div class="vc"><div style="font-size:48px;margin-bottom:12px">📭</div><p>No hay archivos disponibles. Vuelve pronto.</p></div>';
 tA.textContent='0';
 }else{
 cont.innerHTML=renderArbol(d);
 tA.textContent=document.querySelectorAll('.ar').length;}
 }).catch(function(e){cont.innerHTML='<div class="vc">❌ error: '+e+'</div>';});
 }
-
 document.getElementById('btnPet').addEventListener('click',function(){document.getElementById('mPet').classList.add('ac');});
 document.getElementById('btnCanPet').addEventListener('click',function(){document.getElementById('mPet').classList.remove('ac');});
 document.getElementById('btnCanLog').addEventListener('click',function(){document.getElementById('mLog').classList.remove('ac');});
-
 document.getElementById('btnAdm').addEventListener('click',function(){
 var tk=localStorage.getItem('admin_token');
 if(tk){
@@ -469,9 +488,7 @@ else{localStorage.removeItem('admin_token');document.getElementById('mLog').clas
 .catch(function(){localStorage.removeItem('admin_token');document.getElementById('mLog').classList.add('ac');});
 }else{document.getElementById('mLog').classList.add('ac');}
 });
-
 bsc.addEventListener('input',filtrar);
-
 document.getElementById('fPet').addEventListener('submit',function(e){
 e.preventDefault();
 var fd=new FormData(e.target);
@@ -480,7 +497,6 @@ body:JSON.stringify({tipo:fd.get('tipo'),contenido:fd.get('contenido'),detalles:
 .then(function(r){if(r.ok){alert('✅ solicitud enviada exitosamente.');document.getElementById('mPet').classList.remove('ac');e.target.reset();}})
 .catch(function(){alert('❌ error al enviar solicitud');});
 });
-
 document.getElementById('fLog').addEventListener('submit',function(e){
 e.preventDefault();
 var fd=new FormData(e.target);
@@ -500,7 +516,6 @@ setTimeout(function(){window.location.href='/admin?token='+encodeURIComponent(d.
 })
 .catch(function(err){btn.disabled=false;btn.textContent='ingresar';alert('❌ error: '+err);});
 });
-
 cargarCovers();
 cargarArchivos();
 fetch('/api/registrar-visita',{method:'POST'});
@@ -523,7 +538,7 @@ HTML_ADMIN = """<!DOCTYPE html>
 :root{--p:#00ff88;--s:#00d4ff;--a:#ff00ff;--d:#ff3366;--w:#ffaa00;--dk:#050816;--l:#e0e6ed;--g:rgba(10,14,39,0.75)}
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--dk);color:var(--l);min-height:100vh}
 #mc{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.12}
-.ct{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1}
+.ct{max-width:1400px;margin:0 auto;padding:24px 20px;position:relative;z-index:1}
 .hd{display:flex;justify-content:space-between;align-items:center;padding:24px 32px;background:var(--g);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--p);margin-bottom:32px;box-shadow:0 0 30px rgba(0,255,136,0.2);flex-wrap:wrap;gap:16px}
 .hd h1{font-size:28px;background:linear-gradient(135deg,var(--p),var(--a));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Courier New',monospace}
 .bt{padding:10px 20px;border-radius:8px;border:none;font-weight:600;cursor:pointer;transition:all 0.3s;font-family:'Courier New',monospace;font-size:13px}
@@ -611,10 +626,8 @@ if(dr[j]*fs>cv.height&&Math.random()>0.975)dr[j]=0;
 dr[j]++;}
 },50);
 window.addEventListener('resize',function(){cv.width=window.innerWidth;cv.height=window.innerHeight;});
-
 var chAct=null,fail=0;
 var tok=new URLSearchParams(window.location.search).get('token');
-
 function cargarDatos(){
 fetch('/api/admin/stats?token='+encodeURIComponent(tok))
 .then(function(r){
@@ -633,7 +646,6 @@ document.getElementById('tDes').textContent=d.generales.descargas;
 document.getElementById('tGB').textContent=d.generales.gb.toFixed(2);
 document.getElementById('tPet').textContent=d.peticiones_pendientes;
 document.getElementById('tBloq').textContent=d.dispositivos_bloqueados;
-
 if(typeof Chart!=='undefined'){
 document.getElementById('chF').style.display='none';
 document.getElementById('chA').style.display='block';
@@ -648,13 +660,11 @@ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{colo
 }else{
 document.getElementById('chA').style.display='none';
 document.getElementById('chF').style.display='flex';}
-
 var th='';
 for(var a=0;a<d.top_descargadores.length;a++){
 var tp=d.top_descargadores[a];
 th+='<tr><td>'+tp.ip+'</td><td>'+tp.descargas+'</td><td>'+tp.mb.toFixed(2)+'</td></tr>';}
 document.querySelector('#tTop tbody').innerHTML=th||'<tr><td colspan="3" style="text-align:center;color:rgba(224,230,237,0.5)">sin datos</td></tr>';
-
 var dh='';
 for(var b=0;b<d.dispositivos.length;b++){
 var dv2=d.dispositivos[b];
@@ -667,12 +677,10 @@ if(dv2.bloqueado===1){dh+='<button class="ab2 bs2" data-ip="'+dv2.ip+'" data-acc
 else{dh+='<button class="ab2 bd" data-ip="'+dv2.ip+'" data-acc="block">✗ bloquear</button>';}
 dh+='</td></tr>';}
 document.querySelector('#tDev tbody').innerHTML=dh||'<tr><td colspan="6" style="text-align:center;color:rgba(224,230,237,0.5)">sin dispositivos</td></tr>';
-
 cargarPeticiones('todas');
 })
 .catch(function(e){console.error('error:',e);});
 }
-
 function cargarPeticiones(est){
 var tabs=document.querySelectorAll('.tb');
 for(var i=0;i<tabs.length;i++){tabs[i].classList.remove('ac');}
@@ -697,7 +705,6 @@ document.querySelector('#tPet2 tbody').innerHTML=h||'<tr><td colspan="6" style="
 })
 .catch(function(e){console.error('error peticiones:',e);});
 }
-
 document.getElementById('tDev').addEventListener('click',function(e){
 var el=e.target;
 while(el&&el!==this){
@@ -717,7 +724,6 @@ body:JSON.stringify({ip:ip,bloquear:false,motivo:'',token:tok})})
 return;}
 el=el.parentElement;}
 });
-
 document.getElementById('tPet2').addEventListener('click',function(e){
 var el=e.target;
 while(el&&el!==this){
@@ -731,26 +737,22 @@ body:JSON.stringify({id:parseInt(pid),estado:est,token:tok})})
 return;}
 el=el.parentElement;}
 });
-
 var tabs=document.querySelectorAll('.tb');
 for(var t=0;t<tabs.length;t++){
 (function(tab){
 tab.addEventListener('click',function(){cargarPeticiones(tab.getAttribute('data-e'));});
 })(tabs[t]);}
-
 document.getElementById('btnVol').addEventListener('click',function(){window.location.href='/';});
 document.getElementById('btnOut').addEventListener('click',function(){
 fetch('/api/logout?token='+encodeURIComponent(tok),{method:'POST'});
 localStorage.removeItem('admin_token');
 window.location.href='/';});
-
 function cargarChart(){
 var s=document.createElement('script');
 s.src='/static/js/chart.min.js';
 s.onload=function(){cargarDatos();};
 s.onerror=function(){cargarDatos();};
 document.head.appendChild(s);}
-
 cargarChart();
 setInterval(cargarDatos,30000);
 })();
@@ -801,7 +803,6 @@ class ManejadorPersonalizado(http.server.BaseHTTPRequestHandler):
             self.enviar_html(200, HTML_PAGINA)
             return
 
-        # NUEVO: verificar token antes de ir al admin
         if ruta == '/api/verificar-token':
             params = urllib.parse.parse_qs(parsed.query)
             token = params.get('token', [None])[0]
