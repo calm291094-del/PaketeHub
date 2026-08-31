@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHARLES // Neural Interface v4.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --cyan:#00f0ff;--green:#00ff88;--purple:#b026ff;--orange:#ff8800;--red:#ff2255;
+  --bg:#05070d;--panel:rgba(5,15,25,0.88);--border:rgba(0,240,255,0.22);
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--cyan);font-family:'Rajdhani',sans-serif;font-size:14px;line-height:1.4}
+.font-orbitron{font-family:'Orbitron',monospace}
+.font-mono{font-family:'JetBrains Mono',monospace}
+
+/* Backgrounds */
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,240,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.04) 1px,transparent 1px);background-size:40px 40px;animation:gridMove 20s linear infinite;z-index:0;pointer-events:none}
+@keyframes gridMove{0%{background-position:0 0}100%{background-position:40px 40px}}
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,240,255,0.012) 3px,rgba(0,0,0,0) 4px)}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.7) 100%)}
+
+/* 3D Canvas */
+#three-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:3}
+
+/* Layout */
+.app{position:relative;z-index:10;display:flex;flex-direction:column;height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);flex-shrink:0}
+.main{display:flex;flex:1;overflow:hidden}
+.footer{display:flex;align-items:center;justify-content:space-between;padding:6px 20px;border-top:1px solid var(--border);background:rgba(0,0,0,0.4);font-size:11px;flex-shrink:0}
+
+/* Panels */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px;position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.5}
+.panel-title{font-family:'Orbitron',monospace;font-size:10px;color:rgba(0,240,255,0.6);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+
+/* Sidebar */
+.sidebar-left{width:260px;border-right:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:rgba(0,0,0,0.2);flex-shrink:0}
+.sidebar-right{width:300px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:rgba(0,0,0,0.2);flex-shrink:0}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+
+/* HUD corners */
+.hud-corner{position:absolute;width:12px;height:12px;border-color:var(--cyan)}
+.hud-tl{top:0;left:0;border-top:2px solid;border-left:2px solid}
+.hud-tr{top:0;right:0;border-top:2px solid;border-right:2px solid}
+.hud-bl{bottom:0;left:0;border-bottom:2px solid;border-left:2px solid}
+.hud-br{bottom:0;right:0;border-bottom:2px solid;border-right:2px solid}
+
+/* Glows */
+.glow-text{text-shadow:0 0 8px rgba(0,240,255,0.6),0 0 20px rgba(0,240,255,0.3)}
+.glow-green{text-shadow:0 0 8px rgba(0,255,136,0.6)}
+.glow-purple{text-shadow:0 0 8px rgba(176,38,255,0.6)}
+.glow-orange{text-shadow:0 0 8px rgba(255,136,0,0.6)}
+
+/* Status dot */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 10px currentColor;animation:pulseDot 2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.85)}}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-size:10px;font-family:'JetBrains Mono',monospace;border:1px solid}
+.badge-online{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.1)}
+.badge-offline{border-color:var(--orange);color:var(--orange);background:rgba(255,136,0,0.1)}
+.badge-vision{border-color:var(--red);color:var(--red);background:rgba(255,34,85,0.1)}
+
+/* Log */
+.log-entry{animation:slideIn 0.3s ease-out;border-left:2px solid var(--cyan);padding:3px 0 3px 10px;margin-bottom:3px;font-size:12px;font-family:'JetBrains Mono',monospace}
+.log-entry.user{border-left-color:var(--green)}
+.log-entry.charles{border-left-color:var(--orange)}
+.log-entry.system{border-left-color:var(--purple)}
+.log-entry.vision{border-left-color:var(--red)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+
+/* Buttons */
+.btn-cyber{background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);padding:6px 12px;border-radius:3px;cursor:pointer;transition:all 0.2s;font-family:'JetBrains Mono',monospace;font-size:11px}
+.btn-cyber:hover{background:rgba(0,240,255,0.18);border-color:var(--cyan);box-shadow:0 0 15px rgba(0,240,255,0.3)}
+.btn-cyber:active{transform:scale(0.97)}
+
+/* Waveform */
+.waveform{display:flex;align-items:center;gap:2px;height:40px}
+.wave-bar{width:3px;background:linear-gradient(to top,var(--cyan),var(--green));border-radius:2px;transition:height 0.08s;height:4px}
+
+/* Webcam */
+.webcam-container{position:relative;border:1px solid rgba(0,240,255,0.3);background:#000;border-radius:4px;overflow:hidden}
+.webcam-container::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,240,255,0.03) 0px,transparent 2px,transparent 4px);pointer-events:none}
+#webcam-video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.webcam-overlay{position:absolute;inset:0;pointer-events:none;border:2px solid transparent;transition:all 0.3s}
+.webcam-overlay.active{border-color:var(--green);box-shadow:inset 0 0 30px rgba(0,255,136,0.15)}
+.detection-box{position:absolute;border:1px solid var(--green);box-shadow:0 0 8px rgba(0,255,136,0.5);pointer-events:none}
+.detection-label{position:absolute;top:-16px;left:0;background:var(--green);color:#000;font-size:9px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-weight:700}
+
+/* Input */
+.cyber-input{background:rgba(0,10,20,0.6);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);padding:10px 14px 10px 30px;border-radius:4px;width:100%;font-family:'JetBrains Mono',monospace;font-size:13px;transition:all 0.2s}
+.cyber-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 15px rgba(0,240,255,0.3)}
+.cyber-input::placeholder{color:rgba(0,240,255,0.25)}
+
+/* Mic button */
+.mic-btn{width:50px;height:50px;border-radius:50%;background:rgba(0,240,255,0.08);border:2px solid rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;font-size:20px;flex-shrink:0}
+.mic-btn:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,240,255,0.3)}
+.mic-btn.active{border-color:var(--green);box-shadow:0 0 25px rgba(0,255,136,0.4);background:rgba(0,255,136,0.1);animation:micPulse 1.5s ease-in-out infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 15px rgba(0,255,136,0.3)}50%{box-shadow:0 0 35px rgba(0,255,136,0.6)}}
+
+/* Progress bars */
+.progress-bar{width:100%;height:4px;background:rgba(0,240,255,0.1);border-radius:2px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;transition:width 0.5s;border-radius:2px}
+.progress-fill.cyan{background:linear-gradient(90deg,#00a0aa,#00f0ff)}
+.progress-fill.purple{background:linear-gradient(90deg,#7018cc,#b026ff)}
+.progress-fill.green{background:linear-gradient(90deg,#00aa55,#00ff88)}
+
+/* Stats row */
+.stat-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-family:'JetBrains Mono',monospace;margin-bottom:6px}
+.stat-label{color:rgba(0,240,255,0.5)}
+.stat-value{color:var(--cyan)}
+
+/* Data stream */
+.data-stream{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,240,255,0.35);line-height:1.3;overflow:hidden;height:50px}
+
+/* Particles */
+.particle{position:fixed;width:2px;height:2px;background:var(--cyan);border-radius:50%;pointer-events:none;animation:floatUp linear infinite}
+@keyframes floatUp{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:0.7}90%{opacity:0.7}100%{transform:translateY(-50px) scale(1);opacity:0}}
+
+/* Toast */
+.toast{position:fixed;top:70px;right:20px;background:var(--panel);border:1px solid var(--cyan);padding:10px 18px;border-radius:4px;z-index:100;animation:slideInRight 0.3s ease-out;box-shadow:0 0 20px rgba(0,240,255,0.3);font-family:'JetBrains Mono',monospace;font-size:12px}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Boot screen */
+#boot-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.8s}
+#boot-screen.hidden{opacity:0;pointer-events:none}
+.boot-text{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);text-align:left;width:500px;max-width:90vw}
+.boot-line{opacity:0;animation:bootFade 0.3s forwards}
+@keyframes bootFade{to{opacity:1}}
+.boot-progress{width:300px;height:2px;background:rgba(0,240,255,0.1);margin-top:20px;border-radius:1px;overflow:hidden}
+.boot-progress-bar{height:100%;background:var(--cyan);width:0%;transition:width 0.3s}
+
+/* Quick actions grid */
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:rgba(0,240,255,0.03)}
+::-webkit-scrollbar-thumb{background:rgba(0,240,255,0.3);border-radius:2px}
+
+/* Typing cursor */
+.typing::after{content:'▊';animation:blink 1s step-end infinite;color:var(--cyan)}
+@keyframes blink{50%{opacity:0}}
+
+/* Memory tags */
+.memory-tag{display:inline-block;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.2);font-size:9px;padding:2px 6px;border-radius:10px;margin:2px;font-family:'JetBrains Mono',monospace}
+
+/* Connection bar */
+.conn-bar{height:3px;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width 0.5s}
+
+/* Vision description */
+.vision-desc{font-size:11px;font-family:'JetBrains Mono',monospace;color:rgba(0,240,255,0.5);min-height:32px;padding:8px;background:rgba(0,0,0,0.4);border-radius:3px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+  <div class="boot-text" id="boot-text"></div>
+  <div class="boot-progress"><div class="boot-progress-bar" id="boot-bar"></div></div>
+</div>
+
+<div class="bg-grid"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div id="particles"></div>
+
+<!-- MAIN APP -->
+<div class="app" id="main-ui" style="opacity:0;transition:opacity 0.5s">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="status-dot" style="background:var(--cyan);color:var(--cyan)"></span>
+        <h1 class="font-orbitron" style="font-size:18px;font-weight:700;letter-spacing:4px" class="glow-text">CHARLES</h1>
+        <span class="font-mono" style="font-size:10px;color:rgba(0,240,255,0.4)">v4.0</span>
+      </div>
+      <div style="width:1px;height:16px;background:rgba(0,240,255,0.2)"></div>
+      <span class="font-mono" style="font-size:10px;color:rgba(0,240,255,0.4)">NEURAL INTERFACE</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;font-size:12px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="font-mono" style="color:rgba(0,240,255,0.4)">NET:</span>
+        <span id="net-badge" class="badge badge-online">
+          <span class="status-dot" style="width:6px;height:6px;background:var(--green);color:var(--green)"></span>
+          <span id="net-text">ONLINE</span>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="font-mono" style="color:rgba(0,240,255,0.4)">AI:</span>
+        <span id="ai-badge" class="badge badge-online">LOCAL</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="font-mono" style="color:rgba(0,240,255,0.4)">MIC:</span>
+        <span id="mic-indicator" class="status-dot" style="background:rgba(0,240,255,0.3);color:rgba(0,240,255,0.3);opacity:0.4"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="font-mono" style="color:rgba(0,240,255,0.4)">CAM:</span>
+        <span id="cam-indicator" class="status-dot" style="background:var(--red);color:var(--red);opacity:0.3"></span>
+      </div>
+      <div class="font-orbitron" style="font-size:12px" id="clock">00:00:00</div>
+    </div>
+  </div>
+
+  <!-- Connection bar -->
+  <div style="height:3px;background:rgba(0,0,0,0.4)"><div id="conn-bar" class="conn-bar" style="width:100%"></div></div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar-left">
+
+      <!-- System Stats -->
+      <div class="panel">
+        <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
+        <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
+        <div class="panel-title">◈ System Status</div>
+        <div class="stat-row"><span class="stat-label">CPU</span><span class="stat-value" id="cpu-val">--</span></div>
+        <div class="progress-bar"><div id="cpu-bar" class="progress-fill cyan" style="width:0%"></div></div>
+        <div class="stat-row" style="margin-top:10px"><span class="stat-label">RAM</span><span class="stat-value" id="mem-val">--</span></div>
+        <div class="progress-bar"><div id="mem-bar" class="progress-fill purple" style="width:0%"></div></div>
+        <div class="stat-row" style="margin-top:10px"><span class="stat-label">LATENCY</span><span class="stat-value" id="latency-val" style="color:var(--green)">--ms</span></div>
+        <div class="progress-bar"><div id="lat-bar" class="progress-fill green" style="width:0%"></div></div>
+        <div class="stat-row" style="margin-top:10px;border-top:1px solid rgba(0,240,255,0.1);padding-top:8px"><span class="stat-label">UPTIME</span><span class="stat-value" id="uptime-val">00:00:00</span></div>
+      </div>
+
+      <!-- AI Engine -->
+      <div class="panel">
+        <div class="panel-title">◈ AI Engine</div>
+        <div class="stat-row"><span class="stat-label">MODE</span><span class="stat-value" id="ai-mode" style="color:var(--green)">LOCAL</span></div>
+        <div class="stat-row"><span class="stat-label">STT</span><span class="stat-value" id="stt-engine">Web Speech</span></div>
+        <div class="stat-row"><span class="stat-label">TTS</span><span class="stat-value">Speech Synth</span></div>
+        <div class="stat-row"><span class="stat-label">VISION</span><span class="stat-value">Browser API</span></div>
+        <div class="stat-row"><span class="stat-label">3D CORE</span><span class="stat-value" style="color:var(--green)">Three.js</span></div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="panel">
+        <div class="panel-title">◈ Quick Actions</div>
+        <div class="actions-grid">
+          <button onclick="processCommand('qué hora es')" class="btn-cyber">🕐 HORA</button>
+          <button onclick="processCommand('qué día es hoy')" class="btn-cyber">📅 FECHA</button>
+          <button onclick="processCommand('buscar noticias')" class="btn-cyber">🌐 WEB</button>
+          <button onclick="processCommand('qué ves')" class="btn-cyber">👁️ VER</button>
+          <button onclick="processCommand('cuéntame un chiste')" class="btn-cyber">😂 CHISTE</button>
+          <button onclick="processCommand('número aleatorio')" class="btn-cyber">🎲 RANDOM</button>
+          <button onclick="processCommand('ayuda')" class="btn-cyber">❓ AYUDA</button>
+          <button onclick="processCommand('qué puedes hacer')" class="btn-cyber">⚡ PODERES</button>
+        </div>
+      </div>
+
+      <!-- Memory -->
+      <div class="panel">
+        <div class="panel-title">◈ Memory Core</div>
+        <div class="stat-row"><span class="stat-label">INTERACTIONS</span><span class="stat-value" id="interaction-count">0</span></div>
+        <div class="stat-row"><span class="stat-label">FACTS</span><span class="stat-value" id="facts-count">0</span></div>
+        <div class="stat-row"><span class="stat-label">LEARNED</span><span class="stat-value" id="learned-count">0</span></div>
+        <div class="stat-row"><span class="stat-label">VISION LOG</span><span class="stat-value" id="vision-count">0</span></div>
+        <div id="memory-tags" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Data Stream -->
+      <div class="panel">
+        <div class="panel-title">◈ Data Stream</div>
+        <div id="data-stream" class="data-stream"></div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+      <div style="position:relative;width:450px;height:450px">
+        <canvas id="three-canvas"></canvas>
+      </div>
+
+      <!-- Status text -->
+      <div style="position:absolute;top:calc(50% + 240px);text-align:center;pointer-events:none">
+        <p id="charles-state" class="font-orbitron glow-text" style="font-size:14px;letter-spacing:3px">IDLE</p>
+        <p id="charles-status" class="font-mono" style="font-size:12px;color:rgba(0,240,255,0.5);margin-top:4px">Inicializando sistemas...</p>
+        <p id="last-transcript" class="font-mono" style="font-size:11px;color:rgba(0,240,255,0.4);margin-top:4px;font-style:italic"></p>
+      </div>
+
+      <!-- Waveform -->
+      <div class="waveform" id="waveform" style="position:absolute;bottom:120px"></div>
+
+      <!-- Input bar -->
+      <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:600px;max-width:95%">
+        <div class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Micrófono">🎤</div>
+        <div style="flex:1;position:relative">
+          <span class="font-mono" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(0,240,255,0.4);font-size:12px">❯</span>
+          <input type="text" id="manual-input" placeholder="Escribe un comando o habla..." class="cyber-input" onkeypress="if(event.key==='Enter')sendManual()">
+        </div>
+        <button onclick="sendManual()" class="btn-cyber" style="font-weight:700">EXEC</button>
+        <button onclick="toggleVision()" id="vision-btn" class="btn-cyber" title="Toggle Visión">👁</button>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="sidebar-right">
+
+      <!-- Webcam -->
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="panel-title" style="margin:0">◈ Vision Feed</div>
+          <span id="vision-status" class="badge badge-offline">OFFLINE</span>
+        </div>
+        <div class="webcam-container" style="height:170px">
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <div class="webcam-overlay" id="webcam-overlay"></div>
+          <div id="detection-boxes"></div>
+          <div style="position:absolute;top:6px;left:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--green)">
+            <div>REC <span style="display:inline-block;width:6px;height:6px;background:var(--red);border-radius:50%;animation:pulseDot 1s infinite"></span></div>
+            <div id="cam-time">00:00:00</div>
+          </div>
+          <div style="position:absolute;bottom:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--cyan);text-align:right">
+            <div id="cam-fps">-- FPS</div>
+            <div id="cam-objects">0 objects</div>
+          </div>
+        </div>
+        <div id="vision-description" class="vision-desc">
+          <span style="color:rgba(0,240,255,0.3)">// Vision system standby</span>
+        </div>
+      </div>
+
+      <!-- Activity Log -->
+      <div style="flex:1;display:flex;flex-direction:column;padding:12px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="panel-title" style="margin:0">◈ Activity Log</div>
+          <button onclick="clearLog()" class="font-mono" style="font-size:10px;color:rgba(0,240,255,0.4);background:none;border:none;cursor:pointer">CLEAR</button>
+        </div>
+        <div id="log-container" style="flex:1;overflow-y:auto"></div>
+      </div>
+
+      <!-- Current Thought -->
+      <div style="padding:12px;border-top:1px solid var(--border)">
+        <div class="panel-title">◈ Current Thought</div>
+        <div id="current-thought" class="font-mono typing" style="font-size:11px;color:rgba(0,240,255,0.5);min-height:24px">Initializing...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span>CHARLES NEURAL INTERFACE v4.0</span>
+      <span style="color:rgba(0,240,255,0.2)">│</span>
+      <span>MODE: <span id="footer-mode" style="color:var(--cyan)">STANDALONE</span></span>
+      <span style="color:rgba(0,240,255,0.2)">│</span>
+      <span>UPTIME: <span id="uptime" style="color:var(--cyan)">00:00:00</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span>WAKE: <span style="color:var(--cyan)">"Charles" / "Charly"</span></span>
+      <span style="color:rgba(0,240,255,0.2)">│</span>
+      <span id="voice-status" style="color:rgba(0,240,255,0.4)">Voice: loading...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CHARLES NEURAL INTERFACE v4.0 — STANDALONE
+// ═══════════════════════════════════════════════════════
+
+// ============ BOOT ============
+const bootLines = [
+  '[BOOT] Charles Neural Interface v4.0',
+  '[BOOT] Initializing core systems...',
+  '[BOOT] Loading Three.js renderer...',
+  '[BOOT] Initializing speech recognition...',
+  '[BOOT] Loading speech synthesis voices...',
+  '[BOOT] Initializing vision system...',
+  '[BOOT] Loading memory from localStorage...',
+  '[BOOT] Setting up neural network...',
+  '[BOOT] Calibrating audio input...',
+  '[BOOT] Starting always-listening mode...',
+  '[BOOT] All systems nominal.',
+  '[BOOT] ████████████████████████████████ 100%',
+  '[READY] Charles en línea. Di "Charles" para activarme.'
+];
+
+async function runBootSequence() {
+  const container = document.getElementById('boot-text');
+  const bar = document.getElementById('boot-bar');
+  for (let i = 0; i < bootLines.length; i++) {
+    const line = document.createElement('div');
+    line.className = 'boot-line';
+    line.textContent = bootLines[i];
+    if (i >= 10) line.style.color = '#00ff88';
+    container.appendChild(line);
+    bar.style.width = ((i + 1) / bootLines.length * 100) + '%';
+    await sleep(120 + Math.random() * 80);
+  }
+  await sleep(500);
+  document.getElementById('boot-screen').classList.add('hidden');
+  document.getElementById('main-ui').style.opacity = '1';
+  setTimeout(() => document.getElementById('boot-screen').remove(), 1000);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============ STATE ============
+const CHARLES = {
+  state: 'idle',
+  netOnline: navigator.onLine,
+  visionActive: false,
+  micActive: false,
+  startTime: Date.now(),
+  interactionCount: 0,
+  conversationMode: false,
+  lastActivity: Date.now(),
+  recognition: null,
+  selectedVoice: null,
+  webcamStream: null,
+  faceDetector: null,
+  detectedObjects: [],
+  visionLog: [],
+  visionDescription: '',
+  pendingAction: null,
+  memory: {
+    conversations: [],
+    userFacts: {},
+    customResponses: {},
+    preferences: { notes: [] },
+    learnedCommands: {}
+  }
+};
+
+function loadMemory() {
+  try {
+    const saved = localStorage.getItem('charles_memory_v4');
+    if (saved) CHARLES.memory = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveMemory() {
+  try { localStorage.setItem('charles_memory_v4', JSON.stringify(CHARLES.memory)); } catch(e) {}
+}
+
+// ============ NETWORK ============
+function checkNetwork() {
+  CHARLES.netOnline = navigator.onLine;
+  const badge = document.getElementById('net-badge');
+  const text = document.getElementById('net-text');
+  const bar = document.getElementById('conn-bar');
+  const mode = document.getElementById('footer-mode');
+  const aiMode = document.getElementById('ai-mode');
+  
+  if (CHARLES.netOnline) {
+    badge.className = 'badge badge-online';
+    text.textContent = 'ONLINE';
+    bar.style.width = '100%';
+    bar.style.background = 'linear-gradient(90deg, #00ff88, #00f0ff)';
+    mode.textContent = 'HYBRID';
+    aiMode.textContent = 'HYBRID';
+    aiMode.style.color = 'var(--green)';
+    
+    const start = performance.now();
+    fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' })
+      .then(() => {
+        const latency = Math.round(performance.now() - start);
+        document.getElementById('latency-val').textContent = latency + 'ms';
+        document.getElementById('lat-bar').style.width = Math.min(latency / 2, 100) + '%';
+      })
+      .catch(() => {});
+  } else {
+    badge.className = 'badge badge-offline';
+    text.textContent = 'OFFLINE';
+    bar.style.width = '25%';
+    bar.style.background = 'linear-gradient(90deg, #ff8800, #ff2255)';
+    mode.textContent = 'LOCAL';
+    aiMode.textContent = 'LOCAL';
+    aiMode.style.color = 'var(--orange)';
+    document.getElementById('latency-val').textContent = 'N/A';
+  }
+}
+
+window.addEventListener('online', () => { checkNetwork(); addLog('system', '🌐 Conexión restaurada'); });
+window.addEventListener('offline', () => { checkNetwork(); addLog('system', '⚠️ Sin internet - Modo local'); });
+
+// ============ SPEECH RECOGNITION ============
+function initSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('stt-engine').textContent = 'No disponible';
+    document.getElementById('stt-engine').style.color = 'var(--orange)';
+    addLog('system', '⚠️ Speech Recognition no soportado');
+    return false;
+  }
+  
+  CHARLES.recognition = new SR();
+  CHARLES.recognition.continuous = true;
+  CHARLES.recognition.interimResults = true;
+  CHARLES.recognition.lang = 'es-ES';
+  
+  CHARLES.recognition.onresult = (event) => {
+    let interim = '', final = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    if (interim) {
+      document.getElementById('last-transcript').textContent = '🎤 ' + interim;
+      updateState('listening');
+    }
+    if (final) {
+      document.getElementById('last-transcript').textContent = '';
+      handleVoiceInput(final.trim());
+    }
+  };
+  
+  CHARLES.recognition.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') {
+      if (CHARLES.micActive) setTimeout(() => { try { CHARLES.recognition.start(); } catch(x){} }, 200);
+    } else if (e.error === 'not-allowed') {
+      addLog('system', '⚠️ Permiso de micrófono denegado');
+      CHARLES.micActive = false;
+      updateMicUI();
+    }
+  };
+  
+  CHARLES.recognition.onend = () => {
+    if (CHARLES.micActive) setTimeout(() => { try { CHARLES.recognition.start(); } catch(x){} }, 200);
+  };
+  
+  document.getElementById('stt-engine').textContent = 'Web Speech';
+  document.getElementById('stt-engine').style.color = 'var(--green)';
+  return true;
+}
+
+function toggleMic() {
+  if (CHARLES.micActive) {
+    CHARLES.micActive = false;
+    if (CHARLES.recognition) try { CHARLES.recognition.stop(); } catch(e){}
+    addLog('system', '🎤 Micrófono desactivado');
+  } else {
+    if (!CHARLES.recognition) {
+      if (!initSpeechRecognition()) {
+        showToast('Reconocimiento de voz no disponible');
+        return;
+      }
+    }
+    CHARLES.micActive = true;
+    try { CHARLES.recognition.start(); } catch(e){}
+    addLog('system', '🎤 Micrófono activado - Siempre escuchando');
+    showToast('Micrófono activado - Di "Charles"');
+  }
+  updateMicUI();
+}
+
+function updateMicUI() {
+  const btn = document.getElementById('mic-btn');
+  const ind = document.getElementById('mic-indicator');
+  if (CHARLES.micActive) {
+    btn.classList.add('active');
+    ind.style.opacity = '1';
+    ind.style.background = 'var(--green)';
+    ind.style.color = 'var(--green)';
+  } else {
+    btn.classList.remove('active');
+    ind.style.opacity = '0.4';
+    ind.style.background = 'rgba(0,240,255,0.3)';
+    ind.style.color = 'rgba(0,240,255,0.3)';
+  }
+}
+
+// ============ SPEECH SYNTHESIS ============
+function initVoices() {
+  function setVoices() {
+    const voices = speechSynthesis.getVoices();
+    const es = voices.filter(v => v.lang.startsWith('es'));
+    CHARLES.selectedVoice = es[0] || voices[0] || null;
+    if (CHARLES.selectedVoice) {
+      document.getElementById('voice-status').textContent = 'Voice: ' + CHARLES.selectedVoice.name.substring(0, 25);
+    }
+  }
+  setVoices();
+  speechSynthesis.onvoiceschanged = setVoices;
+}
+
+function speak(text) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (CHARLES.selectedVoice) u.voice = CHARLES.selectedVoice;
+  u.rate = 1.0;
+  u.pitch = 1.0;
+  u.onstart = () => updateState('speaking');
+  u.onend = () => { updateState('idle'); document.getElementById('charles-status').textContent = 'Esperando comando...'; };
+  speechSynthesis.speak(u);
+  addLog('charles', '💬 ' + text);
+  document.getElementById('charles-status').textContent = text.substring(0, 70);
+  document.getElementById('current-thought').textContent = text;
+}
+
+// ============ VOICE INPUT ============
+function handleVoiceInput(text) {
+  if (!text || text.length < 2) return;
+  const lower = text.toLowerCase();
+  const wakeWords = ['charles', 'charly', 'charlie'];
+  const hasWake = wakeWords.some(w => lower.includes(w));
+  
+  if (hasWake || CHARLES.conversationMode) {
+    let command = text;
+    if (hasWake) {
+      for (const w of wakeWords) {
+        const idx = lower.indexOf(w);
+        if (idx !== -1) { command = text.substring(idx + w.length).trim(); break; }
+      }
+    }
+    addLog('user', '🗣️ ' + text);
+    if (command.length > 0) {
+      updateState('thinking');
+      setTimeout(() => processCommand(command), 200);
+    } else {
+      speak('¿En qué puedo ayudarte?');
+    }
+    CHARLES.conversationMode = true;
+    CHARLES.lastActivity = Date.now();
+  }
+}
+
+function sendManual() {
+  const input = document.getElementById('manual-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addLog('user', '⌨️ ' + text);
+  updateState('thinking');
+  setTimeout(() => processCommand(text), 200);
+}
+
+// ============ COMMAND PROCESSOR ============
+function processCommand(text) {
+  const lower = text.toLowerCase().trim();
+  CHARLES.interactionCount++;
+  CHARLES.memory.conversations.push({ user: text, time: Date.now() });
+  if (CHARLES.memory.conversations.length > 500) CHARLES.memory.conversations = CHARLES.memory.conversations.slice(-500);
+  
+  let response = '';
+  
+  if (CHARLES.memory.customResponses[lower]) {
+    response = CHARLES.memory.customResponses[lower];
+  }
+  else if (lower.includes('hora')) {
+    const n = new Date();
+    response = `Son las ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')} con ${String(n.getSeconds()).padStart(2,'0')} segundos.`;
+  }
+  else if (lower.includes('fecha') || lower.includes('día es') || lower.includes('dia es')) {
+    const n = new Date();
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    response = `Hoy es ${dias[n.getDay()]}, ${n.getDate()} de ${meses[n.getMonth()]} de ${n.getFullYear()}.`;
+  }
+  else if (lower.includes('buscar') || lower.includes('busca')) {
+    const q = text.replace(/buscar|busca|en google|google/gi, '').trim();
+    if (q) { window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank'); response = `Buscando "${q}"...`; }
+    else response = '¿Qué quieres buscar?';
+  }
+  else if (lower.includes('youtube')) {
+    const q = text.replace(/youtube|busca en|buscar en/gi, '').trim();
+    if (q) { window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank'); response = `Buscando "${q}" en YouTube...`; }
+  }
+  else if (lower.includes('cuánto es') || lower.includes('cuanto es') || lower.includes('calcula')) {
+    let expr = text.replace(/cuánto es|cuanto es|calcula/gi, '').trim().replace(/por/g,'*').replace(/entre/g,'/').replace(/más/g,'+').replace(/menos/g,'-').replace(/x/g,'*');
+    try { const r = Function('"use strict";return('+expr+')')(); response = `El resultado es ${r}`; }
+    catch(e) { response = 'No pude calcular eso.'; }
+  }
+  else if (['hola','buenos días','buenas','hey','qué tal','buenos dias'].some(g => lower.includes(g))) {
+    response = ['¡Hola! ¿En qué puedo ayudarte?','¡Hey! Charles a tu servicio.','¡Buenas! ¿Qué necesitas?'][Math.floor(Math.random()*3)];
+  }
+  else if (lower.includes('quién eres') || lower.includes('quien eres') || lower.includes('qué eres')) {
+    response = 'Soy Charles, tu asistente IA neural. Funciono 100% en tu navegador, puedo ver por tu webcam, escucharte, y aprendo de cada interacción.';
+  }
+  else if (lower.includes('chiste')) {
+    response = ['¿Por qué los programadores prefieren el oscuro? Porque la luz atrae bugs.','Un QA entra a un bar. Pide 1 cerveza. Pide 0. Pide 99999.','¿Qué le dice un bit al otro? Nos vemos en el bus.','Hay 10 tipos de personas: las que entienden binario y las que no.'][Math.floor(Math.random()*4)];
+  }
+  else if (lower.includes('motiv') || lower.includes('ánimo')) {
+    response = ['Cada línea de código te acerca a tus sueños.','Los grandes logros requieren grandes intentos.','No importa lo lento que vayas, mientras no te detengas.'][Math.floor(Math.random()*3)];
+  }
+  else if (lower.includes('recuerda que') || lower.includes('aprende que')) {
+    const fact = text.replace(/recuerda que|aprende que|memoriza/gi, '').trim();
+    if (fact) { CHARLES.memory.userFacts[fact] = { value: fact, time: Date.now() }; saveMemory(); response = `Entendido, recordaré que ${fact}`; addLog('system', '🧠 Dato memorizado'); }
+    else response = '¿Qué quieres que recuerde?';
+  }
+  else if (lower.includes('qué recuerdas') || lower.includes('que recuerdas')) {
+    const facts = Object.values(CHARLES.memory.userFacts);
+    if (facts.length > 0) response = `Recuerdo ${facts.length} cosas: ` + facts.slice(-5).map(f => f.value).join('. ');
+    else response = 'Aún no me has pedido recordar nada.';
+  }
+  else if (lower.includes('enseña que cuando diga')) {
+    const match = lower.match(/enseña que cuando diga (.+?) respondas? (.+)/);
+    if (match) { CHARLES.memory.customResponses[match[1].trim()] = match[2].trim(); saveMemory(); response = `¡Aprendido! Cuando digas "${match[1].trim()}" responderé "${match[2].trim()}"`; }
+    else response = 'Formato: "enseña que cuando diga [frase] respondas [respuesta]"';
+  }
+  else if (lower.includes('anota') || lower.includes('toma nota')) {
+    const note = text.replace(/anota|toma nota/gi, '').trim();
+    if (note) { CHARLES.memory.preferences.notes.push({ text: note, time: Date.now() }); saveMemory(); response = `Nota guardada: "${note}"`; }
+    else response = '¿Qué quieres que anote?';
+  }
+  else if (lower.includes('mis notas') || lower.includes('ver notas')) {
+    const notes = CHARLES.memory.preferences.notes;
+    if (notes.length > 0) response = `Tienes ${notes.length} notas: ` + notes.slice(-5).map((n,i) => `${i+1}. ${n.text}`).join('. ');
+    else response = 'No tienes notas guardadas.';
+  }
+  else if (lower.includes('olvida todo') || lower.includes('borra memoria')) {
+    CHARLES.memory = { conversations: [], userFacts: {}, customResponses: {}, preferences: { notes: [] }, learnedCommands: {} };
+    saveMemory(); response = 'Memoria limpiada.'; addLog('system', '🗑️ Memoria limpiada');
+  }
+  else if (lower.includes('qué ves') || lower.includes('que ves') || lower.includes('describe')) {
+    if (CHARLES.visionActive && CHARLES.detectedObjects.length > 0) {
+      const labels = [...new Set(CHARLES.detectedObjects.map(o => o.label))];
+      response = `Puedo ver: ${labels.join(', ')}. ${CHARLES.visionDescription}`;
+    } else if (CHARLES.visionActive) response = 'Tengo la cámara activada pero no detecto nada significativo.';
+    else response = 'El sistema de visión no está activado. Presiona el botón de ojo.';
+  }
+  else if (lower.includes('hay alguien') || lower.includes('hay persona')) {
+    if (CHARLES.visionActive) {
+      const faces = CHARLES.detectedObjects.filter(o => o.label === 'persona');
+      response = faces.length > 0 ? `Sí, detecto ${faces.length} persona${faces.length>1?'s':''}.` : 'No detecto a nadie.';
+    } else response = 'Activa la visión primero.';
+  }
+  else if (lower.includes('internet') || lower.includes('conexión') || lower.includes('red')) {
+    response = CHARLES.netOnline ? 'Tengo conexión a internet. Modo híbrido.' : 'Sin internet. Modo local.';
+  }
+  else if (lower.includes('ayuda') || lower.includes('qué puedes') || lower.includes('poderes')) {
+    response = 'Puedo: hora, fecha, buscar web/YouTube, cálculos, recordar datos, notas, ver por webcam, chistes, números aleatorios, y conversar.';
+  }
+  else if (lower.includes('gracias')) response = ['¡De nada!','¡Siempre a tu servicio!','¡Con gusto!'][Math.floor(Math.random()*3)];
+  else if (lower.includes('adiós') || lower.includes('bye')) { response = '¡Hasta luego!'; CHARLES.conversationMode = false; }
+  else if (lower.includes('cara o cruz') || lower.includes('moneda')) response = Math.random() > 0.5 ? '¡Cara! 🪙' : '¡Cruz! 🪙';
+  else if (lower.includes('dado')) response = `🎲 ¡Salió un ${Math.floor(Math.random()*6)+1}!`;
+  else if (lower.includes('aleatorio') || lower.includes('random')) {
+    const match = lower.match(/entre (\d+) y (\d+)/);
+    if (match) { const n = Math.floor(Math.random()*(parseInt(match[2])-parseInt(match[1])+1))+parseInt(match[1]); response = `Tu número: ${n}`; }
+    else response = `Tu número: ${Math.floor(Math.random()*100)}`;
+  }
+  else if (lower.includes('temporizador') || lower.includes('timer')) {
+    const match = lower.match(/(\d+) (segundo|minuto)/);
+    if (match) {
+      let secs = parseInt(match[1]); if (match[2]==='minuto') secs *= 60;
+      response = `Temporizador de ${match[1]} ${match[2]}${lower.includes('minuto')?'s':''} iniciado.`;
+      setTimeout(() => { speak('¡Tiempo!'); addLog('system', '⏰ Temporizador finalizado'); }, secs * 1000);
+    } else response = 'Di "temporizador de 5 minutos"';
+  }
+  else if (lower.includes('pantalla completa') || lower.includes('fullscreen')) {
+    document.documentElement.requestFullscreen?.();
+    response = 'Activando pantalla completa...';
+  }
+  else if (lower.includes('captura') || lower.includes('screenshot')) {
+    if (CHARLES.visionActive) {
+      const video = document.getElementById('webcam-video');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const link = document.createElement('a');
+      link.download = `charles_${Date.now()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      response = 'Captura guardada.';
+    } else response = 'Activa la visión para capturas.';
+  }
+  else {
+    CHARLES.memory.learnedCommands[lower] = { time: Date.now(), unknown: true };
+    saveMemory();
+    response = [`No tengo respuesta para "${text}". ¿Puedes enseñarme? Di: "enseña que cuando diga ${text} respondas [respuesta]"`,`Hmm, no sé eso. ¿Busco "${text}" en la web?`,`Interesante. Aún aprendiendo. Di "buscar ${text}" para info web.`][Math.floor(Math.random()*3)];
+  }
+  
+  CHARLES.memory.conversations.push({ charles: response, time: Date.now() });
+  saveMemory();
+  updateMemoryUI();
+  speak(response);
+}
+
+// ============ VISION ============
+async function toggleVision() {
+  if (CHARLES.visionActive) stopVision();
+  else await startVision();
+}
+
+async function startVision() {
+  try {
+    CHARLES.webcamStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false
+    });
+    const video = document.getElementById('webcam-video');
+    video.srcObject = CHARLES.webcamStream;
+    CHARLES.visionActive = true;
+    document.getElementById('vision-status').className = 'badge badge-vision';
+    document.getElementById('vision-status').textContent = 'LIVE';
+    document.getElementById('cam-indicator').style.opacity = '1';
+    document.getElementById('webcam-overlay').classList.add('active');
+    addLog('vision', '👁️ Visión activada');
+    showToast('Visión activada');
+    startFaceDetection();
+  } catch(e) {
+    addLog('system', '⚠️ Error webcam: ' + e.message);
+    showToast('Error: No se pudo acceder a la webcam');
+  }
+}
+
+function stopVision() {
+  if (CHARLES.webcamStream) { CHARLES.webcamStream.getTracks().forEach(t => t.stop()); CHARLES.webcamStream = null; }
+  CHARLES.visionActive = false;
+  CHARLES.detectedObjects = [];
+  document.getElementById('webcam-video').srcObject = null;
+  document.getElementById('vision-status').className = 'badge badge-offline';
+  document.getElementById('vision-status').textContent = 'OFFLINE';
+  document.getElementById('cam-indicator').style.opacity = '0.3';
+  document.getElementById('webcam-overlay').classList.remove('active');
+  document.getElementById('detection-boxes').innerHTML = '';
+  document.getElementById('cam-objects').textContent = '0 objects';
+  addLog('vision', '👁️ Visión desactivada');
+}
+
+let faceDetectionInterval = null;
+let frameCount = 0;
+let lastFpsTime = Date.now();
+
+function startFaceDetection() {
+  if ('FaceDetector' in window) {
+    try { CHARLES.faceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 5 }); } catch(e) {}
+  }
+  faceDetectionInterval = setInterval(analyzeFrame, 500);
+}
+
+async function analyzeFrame() {
+  if (!CHARLES.visionActive) return;
+  const video = document.getElementById('webcam-video');
+  if (!video.videoWidth) return;
+  
+  frameCount++;
+  const now = Date.now();
+  if (now - lastFpsTime >= 1000) {
+    document.getElementById('cam-fps').textContent = frameCount + ' FPS';
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+  
+  let objects = [];
+  
+  if (CHARLES.faceDetector) {
+    try {
+      const faces = await CHARLES.faceDetector.detect(video);
+      faces.forEach(face => {
+        const bb = face.boundingBox;
+        objects.push({
+          label: 'persona', confidence: 0.9,
+          bbox: [(bb.x/video.videoWidth)*100, (bb.y/video.videoHeight)*100, ((bb.x+bb.width)/video.videoWidth)*100, ((bb.y+bb.height)/video.videoHeight)*100]
+        });
+      });
+    } catch(e) {}
+  }
+  
+  // Skin detection fallback
+  try {
+    const canvas = document.createElement('canvas');
+    const w = 160, h = 120;
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    const frame = ctx.getImageData(0, 0, w, h);
+    
+    let skinPixels = 0;
+    for (let i = 0; i < frame.data.length; i += 16) {
+      const r = frame.data[i], g = frame.data[i+1], b = frame.data[i+2];
+      if (r > 95 && g > 40 && b > 20 && r > g && r > b && (r-g) > 15 && Math.abs(r-g) < 80) skinPixels++;
+    }
+    const skinRatio = skinPixels / (w * h / 4);
+    if (skinRatio > 0.05 && !objects.some(o => o.label === 'persona')) {
+      objects.push({ label: 'persona', confidence: Math.min(skinRatio * 5, 0.85), bbox: [10, 10, 90, 90] });
+    }
+  } catch(e) {}
+  
+  CHARLES.detectedObjects = objects;
+  document.getElementById('cam-objects').textContent = objects.length + ' objects';
+  renderDetectionBoxes(objects);
+  
+  if (objects.length > 0) {
+    const labels = [...new Set(objects.map(o => o.label))];
+    let desc = '';
+    if (labels.includes('persona')) desc += `${objects.filter(o=>o.label==='persona').length} persona(s) detectada(s). `;
+    CHARLES.visionDescription = desc;
+    document.getElementById('vision-description').innerHTML = `<span style="color:var(--red)">◈</span> <span style="color:var(--cyan)">${desc || 'Detectando...'}</span>`;
+  } else {
+    CHARLES.visionDescription = '';
+    document.getElementById('vision-description').innerHTML = '<span style="color:rgba(0,240,255,0.3)">◈ Escena estable - sin detecciones</span>';
+  }
+}
+
+function renderDetectionBoxes(objects) {
+  const container = document.getElementById('detection-boxes');
+  container.innerHTML = '';
+  objects.forEach(obj => {
+    if (!obj.bbox) return;
+    const [x1,y1,x2,y2] = obj.bbox;
+    const box = document.createElement('div');
+    box.className = 'detection-box';
+    box.style.cssText = `left:${x1}%;top:${y1}%;width:${x2-x1}%;height:${y2-y1}%`;
+    const label = document.createElement('div');
+    label.className = 'detection-label';
+    label.textContent = `${obj.label} ${(obj.confidence*100).toFixed(0)}%`;
+    box.appendChild(label);
+    container.appendChild(box);
+  });
+}
+
+// ============ STATE ============
+function updateState(state) {
+  CHARLES.state = state;
+  const orb = document.getElementById('charles-state');
+  const states = {
+    idle: { text: 'IDLE', color: 'var(--cyan)', glow: 'glow-text' },
+    listening: { text: 'LISTENING', color: 'var(--green)', glow: 'glow-green' },
+    thinking: { text: 'PROCESSING', color: 'var(--purple)', glow: 'glow-purple' },
+    speaking: { text: 'SPEAKING', color: 'var(--orange)', glow: 'glow-orange' },
+    vision: { text: 'ANALYZING', color: 'var(--red)', glow: '' }
+  };
+  const s = states[state] || states.idle;
+  orb.textContent = s.text;
+  orb.className = `font-orbitron ${s.glow}`;
+  orb.style.cssText = `font-size:14px;letter-spacing:3px;color:${s.color}`;
+  
+  if (window.updateCoreState) window.updateCoreState(state);
+  if (state === 'listening' || state === 'speaking') activateWaveform();
+  else deactivateWaveform();
+}
+
+// ============ UI ============
+function addLog(type, text) {
+  const container = document.getElementById('log-container');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  const time = new Date().toLocaleTimeString('es-ES', {hour12:false});
+  const colors = { user:'var(--green)', charles:'var(--orange)', system:'var(--purple)', vision:'var(--red)' };
+  entry.innerHTML = `<span style="color:rgba(0,240,255,0.3)">[${time}]</span> <span style="color:${colors[type]||'var(--cyan)'}">${text}</span>`;
+  container.appendChild(entry);
+  container.scrollTop = container.scrollHeight;
+  while (container.children.length > 150) container.removeChild(container.firstChild);
+}
+
+function clearLog() { document.getElementById('log-container').innerHTML = ''; addLog('system','Log limpiado'); }
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function updateMemoryUI() {
+  document.getElementById('interaction-count').textContent = CHARLES.interactionCount;
+  document.getElementById('facts-count').textContent = Object.keys(CHARLES.memory.userFacts).length;
+  document.getElementById('learned-count').textContent = Object.keys(CHARLES.memory.customResponses).length;
+  document.getElementById('vision-count').textContent = CHARLES.visionLog.length;
+  
+  const tags = document.getElementById('memory-tags');
+  tags.innerHTML = '';
+  Object.keys(CHARLES.memory.userFacts).slice(-4).forEach(key => {
+    const el = document.createElement('span');
+    el.className = 'memory-tag';
+    el.textContent = key.substring(0, 16);
+    tags.appendChild(el);
+  });
+}
+
+// ============ WAVEFORM ============
+function initWaveform() {
+  const wf = document.getElementById('waveform');
+  for (let i = 0; i < 50; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    wf.appendChild(bar);
+  }
+}
+
+function activateWaveform() {
+  document.querySelectorAll('.wave-bar').forEach(bar => { bar.style.height = (4 + Math.random() * 34) + 'px'; });
+}
+
+function deactivateWaveform() {
+  document.querySelectorAll('.wave-bar').forEach(bar => { bar.style.height = '4px'; });
+}
+
+setInterval(() => { if (CHARLES.state === 'listening' || CHARLES.state === 'speaking') activateWaveform(); }, 120);
+
+// ============ PARTICLES ============
+function initParticles() {
+  const c = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `left:${Math.random()*100}%;animation-duration:${6+Math.random()*12}s;animation-delay:${Math.random()*10}s`;
+    c.appendChild(p);
+  }
+}
+
+// ============ DATA STREAM ============
+function updateDataStream() {
+  const s = document.getElementById('data-stream');
+  const chars = '01▓░▒█▄▀■□●○◈◇◆▲△▼▽';
+  let t = '';
+  for (let i = 0; i < 6; i++) {
+    let line = '';
+    for (let j = 0; j < 35; j++) line += chars[Math.floor(Math.random()*chars.length)];
+    t += line + '\n';
+  }
+  s.textContent = t;
+}
+setInterval(updateDataStream, 200);
+
+// ============ CLOCK & UPTIME ============
+const startTime = Date.now();
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-ES',{hour12:false});
+  document.getElementById('cam-time').textContent = now.toLocaleTimeString('es-ES',{hour12:false});
+  const e = Math.floor((Date.now() - startTime) / 1000);
+  const ts = `${String(Math.floor(e/3600)).padStart(2,'0')}:${String(Math.floor((e%3600)/60)).padStart(2,'0')}:${String(e%60).padStart(2,'0')}`;
+  document.getElementById('uptime').textContent = ts;
+  document.getElementById('uptime-val').textContent = ts;
+}, 1000);
+
+// ============ SYSTEM STATS ============
+setInterval(() => {
+  const cpu = 12 + Math.random() * 20;
+  const mem = 35 + Math.random() * 15;
+  document.getElementById('cpu-val').textContent = cpu.toFixed(1) + '%';
+  document.getElementById('cpu-bar').style.width = cpu + '%';
+  document.getElementById('mem-val').textContent = mem.toFixed(1) + '%';
+  document.getElementById('mem-bar').style.width = mem + '%';
+}, 3000);
+
+// ============ CONVERSATION TIMEOUT ============
+setInterval(() => {
+  if (CHARLES.conversationMode && Date.now() - CHARLES.lastActivity > 5000) CHARLES.conversationMode = false;
+}, 1000);
+
+// ============ THREE.JS ============
+let scene, camera3d, renderer, coreMesh, coreGlow, rings = [], particles3D = [];
+let targetScale = 1, currentState3D = 'idle', time3D = 0;
+
+function init3D() {
+  const canvas = document.getElementById('three-canvas');
+  const container = canvas.parentElement;
+  
+  scene = new THREE.Scene();
+  camera3d = new THREE.PerspectiveCamera(60, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+  camera3d.position.z = 5;
+  
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(container.offsetWidth, container.offsetHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  
+  const coreGeo = new THREE.IcosahedronGeometry(1, 3);
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.6 });
+  coreMesh = new THREE.Mesh(coreGeo, coreMat);
+  scene.add(coreMesh);
+  
+  const innerGeo = new THREE.IcosahedronGeometry(0.65, 2);
+  const innerMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.12 });
+  coreMesh.add(new THREE.Mesh(innerGeo, innerMat));
+  
+  const glowGeo = new THREE.SphereGeometry(1.3, 32, 32);
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.07, side: THREE.BackSide });
+  coreGlow = new THREE.Mesh(glowGeo, glowMat);
+  scene.add(coreGlow);
+  
+  for (let i = 0; i < 3; i++) {
+    const rGeo = new THREE.TorusGeometry(1.6 + i*0.3, 0.008, 8, 80);
+    const rMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.3 - i*0.08 });
+    const ring = new THREE.Mesh(rGeo, rMat);
+    ring.rotation.x = Math.random() * Math.PI;
+    ring.rotation.y = Math.random() * Math.PI;
+    ring.userData = { speed: 0.002 + i*0.001, axis: new THREE.Vector3(Math.random(),Math.random(),Math.random()).normalize() };
+    scene.add(ring);
+    rings.push(ring);
+  }
+  
+  for (let i = 0; i < 70; i++) {
+    const pGeo = new THREE.SphereGeometry(0.018, 4, 4);
+    const pMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.5 });
+    const p = new THREE.Mesh(pGeo, pMat);
+    p.userData = { radius: 1.8+Math.random()*1.5, theta: Math.random()*Math.PI*2, phi: Math.random()*Math.PI, speed: 0.004+Math.random()*0.008, offset: Math.random()*Math.PI*2 };
+    scene.add(p);
+    particles3D.push(p);
+  }
+  
+  window.addEventListener('resize', () => {
+    camera3d.aspect = container.offsetWidth / container.offsetHeight;
+    camera3d.updateProjectionMatrix();
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+  });
+  
+  animate3D();
+}
+
+window.updateCoreState = function(state) {
+  currentState3D = state;
+  const colors = { idle:0x00f0ff, listening:0x00ff88, thinking:0xb026ff, speaking:0xff8800, vision:0xff2255 };
+  const scales = { idle:1, listening:1.15, thinking:1.05, speaking:1.2, vision:1.1 };
+  const color = colors[state] || colors.idle;
+  targetScale = scales[state] || 1;
+  coreMesh.material.color.setHex(color);
+  coreGlow.material.color.setHex(color);
+  rings.forEach(r => r.material.color.setHex(color));
+  particles3D.forEach(p => p.material.color.setHex(color));
+};
+
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  time3D += 0.01;
+  
+  const cs = coreMesh.scale.x;
+  coreMesh.scale.setScalar(cs + (targetScale - cs) * 0.05);
+  coreGlow.scale.setScalar(coreMesh.scale.x * 1.3);
+  
+  coreMesh.rotation.x += 0.003;
+  coreMesh.rotation.y += 0.005;
+  
+  const pos = coreMesh.geometry.attributes.position;
+  const orig = new THREE.IcosahedronGeometry(1, 3).attributes.position;
+  let intensity = { idle:0.03, listening:0.1, thinking:0.08, speaking:0.15, vision:0.12 }[currentState3D] || 0.03;
+  
+  for (let i = 0; i < pos.count; i++) {
+    const ox = orig.getX(i), oy = orig.getY(i), oz = orig.getZ(i);
+    const noise = Math.sin(time3D*3 + i*0.5)*intensity + Math.sin(time3D*5 + i*0.3)*intensity*0.5;
+    const s = 1 + noise;
+    pos.setXYZ(i, ox*s, oy*s, oz*s);
+  }
+  pos.needsUpdate = true;
+  
+  coreGlow.material.opacity = 0.07 + Math.sin(time3D*2)*0.03;
+  rings.forEach(r => r.rotateOnAxis(r.userData.axis, r.userData.speed * (currentState3D==='thinking'?3:1)));
+  
+  particles3D.forEach(p => {
+    p.userData.theta += p.userData.speed;
+    const r = p.userData.radius + Math.sin(time3D*2 + p.userData.offset)*0.2;
+    p.position.set(r*Math.sin(p.userData.phi)*Math.cos(p.userData.theta), r*Math.cos(p.userData.phi), r*Math.sin(p.userData.phi)*Math.sin(p.userData.theta));
+    p.material.opacity = 0.3 + Math.sin(time3D*3 + p.userData.offset)*0.3;
+  });
+  
+  renderer.render(scene, camera3d);
+}
+
+// ============ INIT ============
+window.addEventListener('load', async () => {
+  await runBootSequence();
+  loadMemory();
+  initWaveform();
+  initParticles();
+  init3D();
+  initVoices();
+  initSpeechRecognition();
+  checkNetwork();
+  updateMemoryUI();
+  
+  addLog('system', '◈ CHARLES Neural Interface v4.0');
+  addLog('system', '◈ Three.js: Activo');
+  addLog('system', '◈ Speech: ' + (speechSynthesis ? 'OK' : 'N/A'));
+  addLog('system', '◈ Memoria: ' + CHARLES.memory.conversations.length + ' conversaciones');
+  addLog('system', '◈ Red: ' + (navigator.onLine ? 'Conectada' : 'Offline'));
+  
+  setTimeout(() => {
+    speak('Charles en línea. Sistemas activos. Presiona el micrófono para hablarme.');
+  }, 1500);
+});
+</script>
+</body>
+</html>
