@@ -24,7 +24,7 @@
 ## 🎯 ¿Qué es PaketeHub?
 
 PaketeHub es un servidor multimedia local que permite distribuir contenido (películas, series, música, archivos) a través de una red WiFi local. Ideal para negocios de "paquetes" multimedia donde los clientes se conectan al WiFi y descargan contenido directamente.
-
+```bash
 ┌─────────────────────────────────────────────────────┐
 │                   PaketeHub                         │
 │                                                     │
@@ -37,7 +37,7 @@ PaketeHub es un servidor multimedia local que permite distribuir contenido (pel�
 │   ✅ Estadísticas en tiempo real                    │
 │   ✅ Sistema de peticiones                          │
 └─────────────────────────────────────────────────────┘
-
+```
 
 ---
 
@@ -92,7 +92,6 @@ PaketeHub es un servidor multimedia local que permite distribuir contenido (pel�
 ## 🚀 Instalación
 
 ### 1. Clonar el repositorio
-
 ```bash
 git clone https://github.com/TU_USUARIO/PaketeHub.git
 cd PaketeHub
@@ -273,13 +272,11 @@ Carlos A Lorenzo Marro
 ⭐ Apoya el proyecto
 Si este proyecto te fue útil, dale una ⭐ en GitHub.
 <div align="center">
-
   ╔═══════════════════════════════════════╗
   ║   root@pakete:~$ ./start_server.sh    ║
   ║   ✅ Servidor iniciado en :8000       ║
   ║   ☕ Creado con cafe, anime e IA      ║
   ╚═══════════════════════════════════════╝
-
   </div>
   
 ---
