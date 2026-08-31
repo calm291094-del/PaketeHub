@@ -856,6 +856,7 @@ class ManejadorPersonalizado(http.server.BaseHTTPRequestHandler):
     def leer_json(self):
         cl = int(self.headers.get('Content-Length', 0))
         return json.loads(self.rfile.read(cl).decode('utf-8'))
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         ruta = parsed.path
@@ -880,7 +881,7 @@ class ManejadorPersonalizado(http.server.BaseHTTPRequestHandler):
                     for f in os.listdir(CARPETA_COVERS):
                         ext = f.split('.')[-1].lower()
                         if ext in ['jpg','jpeg','png','gif','webp']:
-                            covers.append({"name":f,"url":"/static/covers/"+urllib.parse.quote(f)})
+                            covers.append({"name":f,"url":"/covers/"+urllib.parse.quote(f)})
                 self.enviar_json(200, covers)
             except Exception as e: self.enviar_error(500, str(e))
             return
@@ -938,6 +939,27 @@ class ManejadorPersonalizado(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(csv_data.encode('utf-8'))
             except Exception as e: self.enviar_error(500, str(e))
             return
+        
+        # NUEVO: Servir imágenes de covers directamente
+        if ruta.startswith('/covers/'):
+            nombre = ruta[len('/covers/'):]
+            ruta_segura = os.path.normpath(urllib.parse.unquote(nombre))
+            if ruta_segura.startswith('..') or os.path.isabs(ruta_segura):
+                self.enviar_error(403, "Acceso denegado"); return
+            ruta_completa = os.path.join(CARPETA_COVERS, ruta_segura)
+            if not os.path.exists(ruta_completa) or os.path.isdir(ruta_completa):
+                self.enviar_error(404, "Imagen no encontrada"); return
+            try:
+                self.send_response(200)
+                tipo, _ = mimetypes.guess_type(ruta_completa)
+                if tipo is None: tipo = 'image/jpeg'
+                self.send_header('Content-type', tipo)
+                self.send_header('Cache-Control', 'public, max-age=3600')
+                self.end_headers()
+                with open(ruta_completa, 'rb') as f: self.wfile.write(f.read())
+            except Exception as e: self.enviar_error(500, str(e))
+            return
+        
         if ruta.startswith('/static/'):
             nombre = ruta[len('/static/'):]
             ruta_segura = os.path.normpath(urllib.parse.unquote(nombre))
@@ -982,6 +1004,7 @@ class ManejadorPersonalizado(http.server.BaseHTTPRequestHandler):
             except Exception as e: self.enviar_error(500, str(e))
             return
         self.enviar_error(404, "Pagina no encontrada")
+
     def do_POST(self):
         ruta = urllib.parse.urlparse(self.path).path
         if ruta == '/api/login':
