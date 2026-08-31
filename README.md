@@ -271,6 +271,7 @@ Carlos A Lorenzo Marro
 </div>
 ```
 ⭐ Apoya el proyecto
+```bash
 Si este proyecto te fue útil, dale una ⭐ en GitHub.
 <div align="center">
   ╔═══════════════════════════════════════╗
@@ -279,7 +280,7 @@ Si este proyecto te fue útil, dale una ⭐ en GitHub.
   ║   ☕ Creado con cafe, anime e IA      ║
   ╚═══════════════════════════════════════╝
   </div>
-  
+```
 ---
 
 ## 📄 **Archivo .gitignore:**
