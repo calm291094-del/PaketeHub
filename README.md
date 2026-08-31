@@ -261,6 +261,7 @@ Las contribuciones son bienvenidas. Para contribuir:
     Abre un Pull Request
 
 📜 Licencia
+```bash
 Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE
  para más detalles.
 👤 Autor
@@ -268,7 +269,7 @@ Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE
 Carlos A Lorenzo Marro
 ☕ Hecho con cafe, anime e IA 🌸🤖
 </div>
-
+```
 ⭐ Apoya el proyecto
 Si este proyecto te fue útil, dale una ⭐ en GitHub.
 <div align="center">
