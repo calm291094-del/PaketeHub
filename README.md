@@ -426,6 +426,7 @@ Carlos A Lorenzo Marro
 
 ⭐ Apoya el proyecto
 Si este proyecto te fue útil, dale una ⭐ en GitHub.
+```bash
 <div align="center">
 ╔═══════════════════════════════════════════╗
 ║   root@pakete:~$ ./start_server.sh        ║
@@ -436,7 +437,7 @@ Si este proyecto te fue útil, dale una ⭐ en GitHub.
 ║   ☕ Creado con cafe, anime e IA          ║
 ╚═══════════════════════════════════════════╝
 </div>
-
+```
 📄 Archivo .gitignore
 # Python
 __pycache__/
