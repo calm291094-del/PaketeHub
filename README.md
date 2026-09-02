@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Mi Pakete Banner](https://img.shields.io/badge/Mi_Pakete-Centro_Multimedia_Local-00ff88?style=for-the-badge)
+![Mi Pakete Banner](banner.png)
 
 **Centro Multimedia Local con estética Cyberpunk**
 
@@ -44,7 +44,7 @@ Servidor multimedia local para distribuir películas, series y música por WiFi.
 ## 🎯 ¿Qué es PaketeHub?
 
 PaketeHub es un servidor multimedia local que permite distribuir contenido (películas, series, música, archivos) a través de una red WiFi local. Ideal para negocios de "paquetes" multimedia donde los clientes se conectan al WiFi y descargan contenido directamente.
-
+```bash
 ┌─────────────────────────────────────────────────────┐
 │                   PaketeHub                         │
 │                                                     │
@@ -59,7 +59,7 @@ PaketeHub es un servidor multimedia local que permite distribuir contenido (pel�
 │   ✅ Autoarranque con Windows                       │
 │   ✅ Modal de bloqueo con canje de códigos          │
 └─────────────────────────────────────────────────────
-
+```
 
 ---
 
