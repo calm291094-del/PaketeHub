@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-============================================================
-  🚀 MI PAKETE - CREADOR DE PORTABLE
-  ☕ Carlos A Lorenzo Marro
-  
-  Ejecuta este script para crear automáticamente el
-  ejecutable portable con autoarranque para Windows.
-  
-  Requisitos: Python 3.x instalado
-  Uso:  python crear_portable.py
-============================================================
+🚀 MI PAKETE - CREADOR DE PORTABLE v2
+☕ Carlos A Lorenzo Marro
+
+Ejecuta este script para crear automáticamente el
+ejecutable portable con autoarranque para Windows.
+
+NUEVO v2: Incluye chart.min.js automáticamente para que
+las gráficas del panel de administración funcionen.
+
+Requisitos: Python 3.x instalado
+Uso:  python crear_portable.py
 """
 
 import os
@@ -19,6 +20,8 @@ import shutil
 import zipfile
 import time
 import platform
+import urllib.request
+import ssl
 
 # ============================================================
 # CONFIGURACIÓN
@@ -31,8 +34,26 @@ CARPETA_DIST = "dist"
 CARPETA_BUILD = "build"
 ARCHIVO_SPEC = NOMBRE_APP + ".spec"
 ARCHIVO_ZIP = NOMBRE_APP + "_Portable.zip"
-
 IS_WINDOWS = platform.system() == "Windows"
+
+# ============================================================
+# CHART.JS (gráficas del panel admin)
+# ============================================================
+CHART_JS_RELATIVO = os.path.join("static", "js", "chart.min.js")
+# Ubicaciones donde buscar una copia local
+CHART_JS_CANDIDATOS = [
+    CHART_JS_RELATIVO,
+    "chart.min.js",
+    "chart.umd.min.js",
+    os.path.join("static", "chart.min.js"),
+    os.path.join("js", "chart.min.js"),
+]
+# CDN a intentar (en orden). La v2.9.4 es la más liviana y compatible.
+CHART_JS_URLS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js",
+    "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
+    "https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js",
+]
 
 # ============================================================
 # COLORES PARA CONSOLA
@@ -56,10 +77,10 @@ def paso(msg):  print(f"\n  {C.MAGENTA}🔧 {msg}{C.RESET}")
 def banner():
     print(f"""
 {C.VERDE}{C.BOLD}
-  ╔══════════════════════════════════════════════╗
-  ║   🚀  MI PAKETE - CREADOR DE PORTABLE  🚀   ║
-  ║   ☕  Carlos A Lorenzo Marro                ║
-  ╚══════════════════════════════════════════════╝
+╔══════════════════════════════════════════════╗
+║   🚀  MI PAKETE - CREADOR DE PORTABLE v2 🚀  ║
+║   ☕  Carlos A Lorenzo Marro                 ║
+╚══════════════════════════════════════════════╝
 {C.RESET}""")
 
 # ============================================================
@@ -206,7 +227,7 @@ def main():
 
     print("")
     print("=" * 70)
-    print("  MI PAKETE v10.0 - Centro Multimedia Portable")
+    print("  MI PAKETE v11.0 - Centro Multimedia Portable")
     print("  Creado por Carlos A Lorenzo Marro con cafe, anime e IA")
     print("=" * 70)
     print("  Archivos:    " + CARPETA_BASE)
@@ -220,8 +241,8 @@ def main():
     else:
         print("  Autoarranque: INACTIVO")
         print("     Tip: Ejecuta con --install para activarlo")
-    print("")
 
+    print("")
     servidores = iniciar_todo()
 
     print("")
@@ -255,7 +276,6 @@ if __name__ == "__main__":
 # ============================================================
 # FUNCIONES DEL SCRIPT
 # ============================================================
-
 def verificar_python():
     paso("Verificando Python...")
     v = sys.version_info
@@ -303,18 +323,97 @@ def verificar_servidor():
         err("Asegúrate de que crear_portable.py esté en la misma carpeta que server_v6.py")
         return False
     ok(f"{ARCHIVO_SERVIDOR} encontrado")
+    # Aviso temprano sobre Chart.js
+    if buscar_chart_local():
+        info("Chart.js local detectado: se incluirá en el portable")
+    else:
+        info("Chart.js local NO encontrado: se intentará descargar (requiere internet)")
     return True
+
+# ============================================================
+# CHART.JS: BUSCAR, DESCARGAR E INCLUIR
+# ============================================================
+def buscar_chart_local():
+    """Busca una copia local de chart.min.js en ubicaciones comunes."""
+    for cand in CHART_JS_CANDIDATOS:
+        try:
+            if os.path.isfile(cand) and os.path.getsize(cand) > 10000:
+                return cand
+        except Exception:
+            pass
+    return None
+
+def descargar_chart_js(destino):
+    """Intenta descargar chart.min.js desde varios CDN, con validación."""
+    for url in CHART_JS_URLS:
+        info("Intentando descargar de: " + url)
+        try:
+            ctx = ssl.create_default_context()
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (MiPakete Portable Builder)"}
+            )
+            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+                data = resp.read()
+
+            # Validación 1: tamaño razonable (Chart.js pesa >100 KB)
+            if len(data) < 20000:
+                warn(f"Respuesta muy pequeña ({len(data)} bytes), probando otro CDN...")
+                continue
+
+            # Validación 2: el contenido debe mencionar Chart
+            inicio = data[:3000].decode('utf-8', errors='ignore').lower()
+            if 'chart' not in inicio:
+                warn("El contenido no parece ser Chart.js, probando otro CDN...")
+                continue
+
+            with open(destino, 'wb') as f:
+                f.write(data)
+            ok(f"Chart.js descargado ({len(data)//1024} KB)")
+            return True
+        except Exception as e:
+            warn(f"Fallo con ese CDN: {e}")
+    return False
+
+def incluir_chart_js():
+    """Paso principal: garantiza chart.min.js dentro del portable."""
+    paso("Incluyendo Chart.js (gráficas del panel admin)...")
+    destino = os.path.join(CARPETA_SALIDA, "static", "js", "chart.min.js")
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
+
+    # 1. Buscar copia local (funciona sin internet)
+    local = buscar_chart_local()
+    if local:
+        shutil.copy2(local, destino)
+        ok(f"Chart.js copiado desde: {local}")
+        return True
+
+    # 2. Intentar descargar desde internet
+    info("No se encontró chart.min.js localmente")
+    if descargar_chart_js(destino):
+        # Guardar copia local para futuras compilaciones sin internet
+        try:
+            os.makedirs(os.path.dirname(CHART_JS_RELATIVO), exist_ok=True)
+            shutil.copy2(destino, CHART_JS_RELATIVO)
+            info(f"Copia guardada en {CHART_JS_RELATIVO} (futuras compilaciones sin internet)")
+        except Exception:
+            pass
+        return True
+
+    # 3. Fallo total (no es fatal: el admin funciona sin gráficas)
+    warn("No se pudo obtener chart.min.js (sin internet y sin copia local)")
+    warn("El panel admin funcionará, pero SIN las gráficas")
+    warn("Solución manual: descarga Chart.js y ponlo en static/js/chart.min.js")
+    return False
 
 def parchear_servidor():
     paso("Preparando servidor con autoarranque...")
-
     with open(ARCHIVO_SERVIDOR, 'r', encoding='utf-8') as f:
         codigo = f.read()
 
     # Verificar si ya tiene las modificaciones
     if 'instalar_autoarranque' in codigo and 'argparse' in codigo:
         ok("El servidor ya tiene las funciones de autoarranque")
-        # Usar el archivo original directamente
         shutil.copy2(ARCHIVO_SERVIDOR, ARCHIVO_PARCHEADO)
         return True
 
@@ -342,22 +441,11 @@ def parchear_servidor():
         err("No se encontró 'def main():' - no se puede parchear")
         return False
 
-    # Buscar el if __name__ para saber dónde termina main
-    idx_name = codigo.find('if __name__', idx_main)
-    if idx_name == -1:
-        idx_name = codigo.find('if name ==', idx_main)
-    
-    if idx_name == -1:
-        # Si no hay if __name__, reemplazar desde main() hasta el final
-        codigo = codigo[:idx_main] + NUEVA_MAIN
-    else:
-        codigo = codigo[:idx_main] + NUEVA_MAIN
-
+    codigo = codigo[:idx_main] + NUEVA_MAIN
     ok("Función main() reemplazada")
 
     with open(ARCHIVO_PARCHEADO, 'w', encoding='utf-8') as f:
         f.write(codigo)
-
     ok(f"Archivo parcheado guardado como '{ARCHIVO_PARCHEADO}'")
     return True
 
@@ -381,7 +469,6 @@ def limpiar_anterior():
 def compilar_exe():
     paso("Compilando ejecutable (esto puede tardar 1-3 minutos)...")
     print(f"  {C.AMARILLO}Por favor espera, no cierres esta ventana...{C.RESET}")
-
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--onefile",
@@ -392,7 +479,6 @@ def compilar_exe():
         "--log-level", "WARN"
     ]
 
-    # Agregar icono si existe
     if os.path.exists("icon.ico"):
         cmd.extend(["--icon", "icon.ico"])
         info("Usando icono: icon.ico")
@@ -415,7 +501,6 @@ def compilar_exe():
                 return False
         else:
             err("Error en la compilación:")
-            # Mostrar últimas líneas del error
             stderr = r.stderr.strip()
             ultimas = stderr.split('\n')[-10:]
             for linea in ultimas:
@@ -430,37 +515,30 @@ def compilar_exe():
 
 def crear_estructura():
     paso("Creando estructura de carpetas...")
-
     os.makedirs(CARPETA_SALIDA, exist_ok=True)
 
-    # Copiar el exe
     src = os.path.join(CARPETA_DIST, NOMBRE_APP + ".exe")
     dst = os.path.join(CARPETA_SALIDA, NOMBRE_APP + ".exe")
     shutil.copy2(src, dst)
     ok(f"{NOMBRE_APP}.exe copiado")
 
-    # Crear carpetas de datos
     carpetas = ["Pakete", "covers", "static", "backups", "logs"]
     for carp in carpetas:
         os.makedirs(os.path.join(CARPETA_SALIDA, carp), exist_ok=True)
-        # Crear subcarpetas en static
         if carp == "static":
             os.makedirs(os.path.join(CARPETA_SALIDA, carp, "js"), exist_ok=True)
             os.makedirs(os.path.join(CARPETA_SALIDA, carp, "css"), exist_ok=True)
     ok(f"Carpetas creadas: {', '.join(carpetas)}")
 
-    # Copiar icono si existe
     for ico in ["icon.ico", "icon.png", "icon.svg"]:
         if os.path.exists(ico):
             shutil.copy2(ico, os.path.join(CARPETA_SALIDA, ico))
             info(f"Icono copiado: {ico}")
-
     return True
 
 def generar_bats():
     paso("Generando archivos .bat...")
 
-    # Iniciar servidor
     with open(os.path.join(CARPETA_SALIDA, "Iniciar_Servidor.bat"), 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
         f.write('title Mi Pakete - Servidor Multimedia\n')
@@ -468,7 +546,6 @@ def generar_bats():
         f.write(f'start "" "{NOMBRE_APP}.exe"\n')
     ok("Iniciar_Servidor.bat")
 
-    # Instalar autoarranque
     with open(os.path.join(CARPETA_SALIDA, "Instalar_Autoarranque.bat"), 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
         f.write('title Mi Pakete - Instalar Autoarranque\n')
@@ -476,7 +553,6 @@ def generar_bats():
         f.write(f'"{NOMBRE_APP}.exe" --install\n')
     ok("Instalar_Autoarranque.bat")
 
-    # Desinstalar autoarranque
     with open(os.path.join(CARPETA_SALIDA, "Desinstalar_Autoarranque.bat"), 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
         f.write('title Mi Pakete - Desinstalar Autoarranque\n')
@@ -484,82 +560,82 @@ def generar_bats():
         f.write(f'"{NOMBRE_APP}.exe" --remove\n')
     ok("Desinstalar_Autoarranque.bat")
 
-    # Iniciar en modo silencioso
     with open(os.path.join(CARPETA_SALIDA, "Iniciar_Silencioso.bat"), 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
         f.write('cd /d "%~dp0"\n')
         f.write(f'start /min "" "{NOMBRE_APP}.exe" --silent\n')
     ok("Iniciar_Silencioso.bat")
-
     return True
 
-def generar_leeme():
+def generar_leeme(chart_ok):
     paso("Generando LEEME.txt...")
-
+    chart_txt = "✅ Incluido" if chart_ok else "❌ NO incluido (descargar manualmente)"
     contenido = f"""
 {'=' * 60}
-  MI PAKETE - Servidor Multimedia Portable
-  Creado por Carlos A Lorenzo Marro
+MI PAKETE - Servidor Multimedia Portable
+Creado por Carlos A Lorenzo Marro
 {'=' * 60}
 
-  INSTRUCCIONES DE USO:
+INSTRUCCIONES DE USO:
+1. Copia esta carpeta completa a cualquier PC con Windows
+2. Pon tus archivos multimedia en la carpeta "Pakete"
+3. Pon las portadas en la carpeta "covers"
+4. Enciende mHotspot ANTES de iniciar el servidor
+5. Ejecuta "Iniciar_Servidor.bat"
+6. Los clientes se conectan a: http://192.168.137.1
 
-  1. Copia esta carpeta completa a cualquier PC con Windows
-  2. Pon tus archivos multimedia en la carpeta "Pakete"
-  3. Pon las portadas en la carpeta "covers"
-  4. Enciende mHotspot ANTES de iniciar el servidor
-  5. Ejecuta "Iniciar_Servidor.bat"
-  6. Los clientes se conectan a: http://192.168.137.1
+AUTOARRANQUE CON WINDOWS:
+- Doble clic en "Instalar_Autoarranque.bat"
+- El servidor se iniciara solo al encender Windows
+- Se ejecuta en modo silencioso (sin ventana visible)
+- Para quitarlo: "Desinstalar_Autoarranque.bat"
 
-  AUTOARRANQUE CON WINDOWS:
+ACCESO ADMINISTRADOR:
+- Usuario: root
+- Contrasena: admin123
+- Cambiar en: Panel Admin > Config
 
-  - Doble clic en "Instalar_Autoarranque.bat"
-  - El servidor se iniciara solo al encender Windows
-  - Se ejecuta en modo silencioso (sin ventana visible)
-  - Para quitarlo: "Desinstalar_Autoarranque.bat"
+GRAFICAS DEL PANEL ADMIN:
+- Chart.js: {chart_txt}
+- Ubicacion: static/js/chart.min.js
+- Si no esta, el admin funciona pero sin graficas.
+  Descarga Chart.js y colocalo en esa ruta para activarlas.
 
-  ACCESO ADMINISTRADOR:
+ESTRUCTURA DE CARPETAS:
+MiPakete_Portable/
+├── {NOMBRE_APP}.exe        ← Servidor (este archivo)
+├── Pakete/                 ← Tus archivos multimedia
+├── covers/                 ← Portadas de estrenos
+├── static/
+│   ├── js/
+│   │   └── chart.min.js    ← Libreria de graficas ({chart_txt})
+│   └── css/
+├── backups/                ← Respaldos de la base de datos
+├── logs/                   ← Logs del servidor
+├── Iniciar_Servidor.bat    ← Iniciar con ventana
+├── Iniciar_Silencioso.bat  ← Iniciar sin ventana
+├── Instalar_Autoarranque.bat
+├── Desinstalar_Autoarranque.bat
+└── LEEME.txt               ← Este archivo
 
-  - Usuario: root
-  - Contrasena: admin123
-  - Cambiar en: Panel Admin > Config
+COMANDOS DEL EJECUTABLE:
+{NOMBRE_APP}.exe              → Inicia normal con consola
+{NOMBRE_APP}.exe --silent     → Inicia sin ventana visible
+{NOMBRE_APP}.exe --minimized  → Inicia minimizado
+{NOMBRE_APP}.exe --install    → Instala autoarranque
+{NOMBRE_APP}.exe --remove     → Desinstala autoarranque
 
-  ESTRUCTURA DE CARPETAS:
-
-  MiPakete_Portable/
-  ├── {NOMBRE_APP}.exe        ← Servidor (este archivo)
-  ├── Pakete/                 ← Tus archivos multimedia
-  ├── covers/                 ← Portadas de estrenos
-  ├── static/                 ← Recursos web
-  ├── backups/                ← Respaldos de la base de datos
-  ├── logs/                   ← Logs del servidor
-  ├── Iniciar_Servidor.bat    ← Iniciar con ventana
-  ├── Iniciar_Silencioso.bat  ← Iniciar sin ventana
-  ├── Instalar_Autoarranque.bat
-  ├── Desinstalar_Autoarranque.bat
-  └── LEEME.txt               ← Este archivo
-
-  COMANDOS DEL EJECUTABLE:
-
-  {NOMBRE_APP}.exe              → Inicia normal con consola
-  {NOMBRE_APP}.exe --silent     → Inicia sin ventana visible
-  {NOMBRE_APP}.exe --minimized  → Inicia minimizado
-  {NOMBRE_APP}.exe --install    → Instala autoarranque
-  {NOMBRE_APP}.exe --remove     → Desinstala autoarranque
-
-  NOTAS IMPORTANTES:
-
-  - El servidor necesita permisos de administrador para
-    usar los puertos 80 y 53 (captive portal completo)
-  - Si no tiene permisos de admin, funciona solo en :8000
-  - La base de datos (pakete.db) se crea automaticamente
-  - Los datos persisten entre reinicios
+NOTAS IMPORTANTES:
+- El servidor necesita permisos de administrador para
+  usar los puertos 80 y 53 (captive portal completo)
+- Si no tiene permisos de admin, funciona solo en :8000
+- La base de datos (pakete.db) se crea automaticamente
+- Los datos persisten entre reinicios
 
 {'=' * 60}
-  Generado el: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Generado el: {time.strftime('%Y-%m-%d %H:%M:%S')}
 {'=' * 60}
 """
-
     with open(os.path.join(CARPETA_SALIDA, "LEEME.txt"), 'w', encoding='utf-8') as f:
         f.write(contenido)
     ok("LEEME.txt creado")
@@ -597,22 +673,27 @@ def limpiar_temporales():
                 pass
     ok("Temporales eliminados")
 
-def resumen_final(zip_creado):
+def resumen_final(zip_creado, chart_ok):
     print(f"""
 {C.VERDE}{C.BOLD}
-  ╔══════════════════════════════════════════════╗
-  ║        ✅  PORTABLE CREADO CON ÉXITO  ✅     ║
-  ╚══════════════════════════════════════════════╝
+╔══════════════════════════════════════════════╗
+║        ✅  PORTABLE CREADO CON ÉXITO  ✅     ║
+╚══════════════════════════════════════════════╝
 {C.RESET}""")
-    print(f"  📦 Carpeta:  {C.CYAN}{CARPETA_SALIDA}/{C.RESET}")
+    print(f"  📦 Carpeta:   {C.CYAN}{CARPETA_SALIDA}/{C.RESET}")
     if zip_creado:
-        print(f"  📦 ZIP:      {C.CYAN}{ARCHIVO_ZIP}{C.RESET}")
+        print(f"  📦 ZIP:       {C.CYAN}{ARCHIVO_ZIP}{C.RESET}")
+    if chart_ok:
+        print(f"  📊 Chart.js:  {C.VERDE}✅ incluido (gráficas del admin activas){C.RESET}")
+    else:
+        print(f"  📊 Chart.js:  {C.AMARILLO}⚠️ NO incluido (el admin funcionará sin gráficas){C.RESET}")
+        print(f"     {C.AMARILLO}→ Descarga Chart.js y ponlo en {CARPETA_SALIDA}/static/js/chart.min.js{C.RESET}")
     print(f"""
-  {C.AMARILLO}Próximos pasos:{C.RESET}
-  1. Copia la carpeta {C.BOLD}{CARPETA_SALIDA}/{C.RESET} a donde quieras
-  2. Agrega tus archivos en {C.BOLD}Pakete/{C.RESET}
-  3. Ejecuta {C.BOLD}Iniciar_Servidor.bat{C.RESET}
-  4. Para autoarranque: {C.BOLD}Instalar_Autoarranque.bat{C.RESET}
+{C.AMARILLO}Próximos pasos:{C.RESET}
+1. Copia la carpeta {C.BOLD}{CARPETA_SALIDA}/{C.RESET} a donde quieras
+2. Agrega tus archivos en {C.BOLD}Pakete/{C.RESET}
+3. Ejecuta {C.BOLD}Iniciar_Servidor.bat{C.RESET}
+4. Para autoarranque: {C.BOLD}Instalar_Autoarranque.bat{C.RESET}
 """)
 
 # ============================================================
@@ -647,7 +728,6 @@ def main():
     # Paso 5: Parchear el servidor con autoarranque
     if not parchear_servidor():
         err("No se pudo parchear el servidor")
-        err("Puedes aplicar las modificaciones manualmente (ver instrucciones)")
         return
 
     # Paso 6: Compilar
@@ -658,20 +738,23 @@ def main():
     # Paso 7: Crear estructura de carpetas
     crear_estructura()
 
-    # Paso 8: Generar archivos .bat
+    # Paso 8: ✨ NUEVO — Incluir Chart.js (local o descargado)
+    chart_ok = incluir_chart_js()
+
+    # Paso 9: Generar archivos .bat
     generar_bats()
 
-    # Paso 9: Generar LEEME.txt
-    generar_leeme()
+    # Paso 10: Generar LEEME.txt
+    generar_leeme(chart_ok)
 
-    # Paso 10: Crear ZIP
+    # Paso 11: Crear ZIP
     zip_creado = crear_zip()
 
-    # Paso 11: Limpiar temporales
+    # Paso 12: Limpiar temporales
     limpiar_temporales()
 
     # Resumen final
-    resumen_final(zip_creado)
+    resumen_final(zip_creado, chart_ok)
 
     input(f"  {C.VERDE}Presiona ENTER para salir...{C.RESET}")
 
